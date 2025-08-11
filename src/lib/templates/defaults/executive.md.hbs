@@ -1,0 +1,142 @@
+# Executive Space Weather Briefing
+
+**Date:** {{formatDate generatedAt "PPPP"}}  
+**Time:** {{formatDate generatedAt "p 'UTC'"}}
+
+---
+
+## Key Findings
+
+### {{combinedHeadline}}
+
+{{executiveSummary}}
+
+---
+
+## Current Status Overview
+
+{{#if sources}}
+### Data Sources Analyzed: {{length sources}}
+
+{{#each sources}}
+**{{sourceIcon source}} {{source}}** ({{formatDate issuedAt "MMM dd, p"}})  
+{{summary}}
+{{#if geomagneticLevel}}🌍 **Geomagnetic:** {{hazardLevel geomagneticLevel}}{{/if}}
+{{#if radioBlackoutLevel}}📡 **Communications:** {{hazardLevel radioBlackoutLevel}}{{/if}}  
+{{#if radiationStormLevel}}⚡ **Radiation:** {{hazardLevel radiationStormLevel}}{{/if}}
+
+{{/each}}
+{{/if}}
+
+---
+
+## Risk Assessment
+
+{{#if riskAssessment}}
+{{#if riskAssessment.overall}}
+### Overall Risk Level
+{{riskIcon (lowercase riskAssessment.overall)}} **{{capitalize riskAssessment.overall}}**
+
+{{riskAssessment.overall}}
+{{/if}}
+
+### Sector-Specific Impacts
+
+{{#if riskAssessment.geomagnetic}}
+#### 🔌 Power & Infrastructure
+{{riskAssessment.geomagnetic}}
+{{/if}}
+
+{{#if riskAssessment.radioBlackout}}
+#### 📡 Communications & Navigation  
+{{riskAssessment.radioBlackout}}
+{{/if}}
+
+{{#if riskAssessment.radiationStorm}}
+#### ✈️ Aviation & Space Operations
+{{riskAssessment.radiationStorm}}
+{{/if}}
+{{else}}
+### Overall Risk Assessment
+Based on current conditions, space weather impacts are within normal operational parameters. Continued monitoring is recommended.
+{{/if}}
+
+---
+
+## 72-Hour Outlook
+
+{{forecast72h}}
+
+---
+
+## Recommended Actions
+
+{{#if recommendations}}
+{{#each recommendations}}
+{{@index}}. **{{this}}**
+{{/each}}
+{{else}}
+1. **Continue routine monitoring** of space weather conditions
+2. **Maintain standard operational procedures** for all sectors
+3. **Review contingency plans** for critical infrastructure
+4. **Monitor updates** from space weather services
+{{/if}}
+
+---
+
+## Business Continuity Considerations
+
+### Critical Infrastructure
+- **Power grids** may experience minor fluctuations during elevated geomagnetic activity
+- **Satellite operations** should maintain standard protocols with enhanced monitoring
+- **Aviation routes** over polar regions may require alternative planning during severe events
+
+### Communications
+- **HF radio communications** may experience intermittent disruptions
+- **GNSS/GPS accuracy** could be reduced during active periods
+- **Backup communication systems** should be tested and ready
+
+### Timeline for Next Review
+- **Next automatic update:** {{formatDate (addHours generatedAt 6) "MMM dd 'at' p 'UTC'"}}
+- **Emergency updates:** Issued as conditions warrant
+- **Full assessment review:** Daily at 12:00 UTC
+
+---
+
+## Key Metrics
+
+{{#if sources}}
+| Indicator | Current Level | Trend | Impact |
+|-----------|---------------|-------|--------|
+{{#each sources}}
+| {{source}} Quality | {{#if qualityScore}}{{formatPercentage qualityScore}}{{else}}N/A{{/if}} | {{trendArrow 1 0.8}} | {{#if geomagneticLevel}}{{geomagneticLevel}}{{else}}Baseline{{/if}} |
+{{/each}}
+{{/if}}
+
+{{#if confidenceScore}}
+**Overall Confidence Level:** {{confidenceBar confidenceScore}}  
+*Confidence based on data quality, source reliability, and model accuracy*
+{{/if}}
+
+---
+
+## Contact Information
+
+**For immediate operational concerns:**
+- NOAA Space Weather Prediction Center: [www.swpc.noaa.gov](https://www.swpc.noaa.gov)
+- UK Met Office Space Weather Operations: [www.metoffice.gov.uk/weather/specialist-forecasts/space-weather](https://www.metoffice.gov.uk/weather/specialist-forecasts/space-weather)
+
+**Emergency Protocols:**
+- Critical infrastructure operators should follow established space weather response procedures
+- Aviation: Consult ICAO space weather advisories for polar route operations
+- Satellite operators: Implement protective measures as warranted by current conditions
+
+---
+
+*This executive briefing provides a high-level summary of space weather conditions. Detailed technical analysis and operational guidance are available through specialized channels. Information is current as of {{formatDate generatedAt "PPP 'at' p 'UTC'"}}.*
+
+**Document Prepared By:** AI Space Weather Analysis System  
+{{#if llmProvider}}**Processing Engine:** {{llmProvider}}{{#if llmModel}} ({{llmModel}}){{/if}}{{/if}}  
+**Report Classification:** Executive Summary  
+**Distribution:** Senior Leadership, Operations Managers  
+**Validity:** {{formatDate (addHours generatedAt 12) "Until MMM dd 'at' p 'UTC'"}}

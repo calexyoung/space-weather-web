@@ -1,0 +1,128 @@
+# Space Weather Report
+
+**Generated:** {{formatDate generatedAt "PPP 'at' p 'UTC'"}}
+{{#if llmProvider}}**AI Model:** {{llmProvider}}{{#if llmModel}} ({{llmModel}}){{/if}}{{/if}}
+{{#if generationTime}}**Generation Time:** {{formatNumber (divide generationTime 1000) 2}} seconds{{/if}}
+
+---
+
+## {{combinedHeadline}}
+
+### Executive Summary
+
+{{executiveSummary}}
+
+### Current Conditions
+
+{{#if sources}}
+Based on analysis of {{length sources}} data source{{#gt (length sources) 1}}s{{/gt}}:
+
+{{#each sources}}
+#### {{sourceIcon source}} {{source}} Report
+**Issued:** {{formatDate issuedAt "PPP 'at' p"}} UTC  
+{{#if confidence}}**Confidence:** {{confidence}}{{/if}}
+{{#if qualityScore}}**Data Quality:** {{confidenceBar qualityScore}}{{/if}}
+
+**Headline:** {{headline}}
+
+**Summary:** {{summary}}
+
+{{#if geomagneticLevel}}**Geomagnetic Activity:** {{hazardLevel geomagneticLevel}} {{riskIcon (lowercase (hazardLevel geomagneticLevel))}}{{/if}}
+{{#if radioBlackoutLevel}}**Radio Blackouts:** {{hazardLevel radioBlackoutLevel}} {{riskIcon (lowercase (hazardLevel radioBlackoutLevel))}}{{/if}}
+{{#if radiationStormLevel}}**Radiation Storms:** {{hazardLevel radiationStormLevel}} {{riskIcon (lowercase (hazardLevel radiationStormLevel))}}{{/if}}
+
+{{#if geomagneticText}}*Geomagnetic Details:* {{geomagneticText}}{{/if}}
+{{#if radioBlackoutText}}*Radio Blackout Details:* {{radioBlackoutText}}{{/if}}
+{{#if radiationStormText}}*Radiation Storm Details:* {{radiationStormText}}{{/if}}
+
+{{#if validStart}}**Valid Period:** {{formatDate validStart "PPP"}} to {{formatDate validEnd "PPP"}}{{/if}}
+
+---
+
+{{/each}}
+{{/if}}
+
+### Space Weather Activities
+
+{{#if solarActivity}}
+#### ☀️ Solar Activity
+{{solarActivity}}
+{{/if}}
+
+{{#if geomagneticActivity}}
+#### 🌍 Geomagnetic Activity
+{{geomagneticActivity}}
+{{/if}}
+
+{{#if radiationEnvironment}}
+#### ⚡ Radiation Environment
+{{radiationEnvironment}}
+{{/if}}
+
+### 72-Hour Forecast
+
+{{forecast72h}}
+
+{{#if riskAssessment}}
+### Risk Assessment
+
+{{#if riskAssessment.geomagnetic}}
+**Geomagnetic Risks:** {{riskAssessment.geomagnetic}}
+{{/if}}
+
+{{#if riskAssessment.radioBlackout}}
+**Communication Risks:** {{riskAssessment.radioBlackout}}
+{{/if}}
+
+{{#if riskAssessment.radiationStorm}}
+**Radiation Risks:** {{riskAssessment.radiationStorm}}
+{{/if}}
+
+{{#if riskAssessment.overall}}
+**Overall Risk Level:** {{riskAssessment.overall}}
+{{/if}}
+{{/if}}
+
+{{#if recommendations}}
+### Recommended Actions
+
+{{#each recommendations}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+---
+
+### Technical Details
+
+{{#if sources}}
+#### Data Source Summary
+
+| Source | Quality | Geomagnetic | Radio | Radiation | Issued |
+|--------|---------|-------------|-------|-----------|---------|
+{{#each sources}}
+| {{sourceIcon source}} {{source}} | {{#if qualityScore}}{{formatPercentage qualityScore}}{{else}}N/A{{/if}} | {{#if geomagneticLevel}}{{geomagneticLevel}}{{else}}-{{/if}} | {{#if radioBlackoutLevel}}{{radioBlackoutLevel}}{{else}}-{{/if}} | {{#if radiationStormLevel}}{{radiationStormLevel}}{{else}}-{{/if}} | {{formatDate issuedAt "MM/dd HH:mm"}} |
+{{/each}}
+{{/if}}
+
+{{#if confidenceScore}}
+**Overall Confidence:** {{confidenceBar confidenceScore}}
+{{/if}}
+
+---
+
+*This report was automatically generated from multiple space weather monitoring sources. Information is current as of {{formatDate generatedAt "PPP 'at' p 'UTC'"}}. For the most up-to-date conditions and warnings, consult official space weather services directly.*
+
+**Data Sources:**
+{{#each sources}}
+- {{source}}{{#if sourceUrl}}: [{{sourceUrl}}]({{sourceUrl}}){{/if}}
+{{/each}}
+
+**Report Generation Details:**
+- Generated: {{formatISODate generatedAt}}
+{{#if llmProvider}}
+- AI Provider: {{llmProvider}}{{#if llmModel}} ({{llmModel}}){{/if}}
+{{/if}}
+{{#if generationTime}}
+- Processing Time: {{formatNumber generationTime}} ms
+{{/if}}

@@ -1,0 +1,291 @@
+// Space Weather Report Database Schema
+// Prisma schema for space weather data aggregation and reporting
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Space weather data source types
+enum SourceType {
+  NOAA_SWPC
+  UK_MET_OFFICE
+  HELIO_UCLES
+  OTHER
+}
+
+// Hazard severity levels
+enum HazardLevel {
+  G1
+  G2
+  G3
+  G4
+  G5
+  R1
+  R2
+  R3
+  R4
+  R5
+  S1
+  S2
+  S3
+  S4
+  S5
+}
+
+// LLM provider types
+enum LlmProvider {
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+}
+
+// Report status for tracking lifecycle
+enum ReportStatus {
+  DRAFT
+  GENERATING
+  COMPLETED
+  FAILED
+  ARCHIVED
+}
+
+// Export formats supported
+enum ExportFormat {
+  MARKDOWN
+  HTML
+  JSON
+  PDF
+}
+
+// Generated space weather reports
+model SpaceWeatherReport {
+  id               String           @id @default(cuid())
+  generatedAt      DateTime         @default(now())
+  combinedHeadline String
+  executiveSummary String
+  outlookNext72h   String
+  markdownContent  String           @db.Text
+  htmlContent      String           @db.Text
+  jsonMetadata     Json?
+  
+  // Report lifecycle
+  status           ReportStatus     @default(DRAFT)
+  version          Int              @default(1)
+  parentId         String?          // For versioning
+  parent           SpaceWeatherReport? @relation("ReportVersions", fields: [parentId], references: [id])
+  versions         SpaceWeatherReport[] @relation("ReportVersions")
+  
+  // Soft delete
+  isDeleted        Boolean          @default(false)
+  deletedAt        DateTime?
+  
+  // Search and content
+  searchVector     String?          // For full-text search
+  wordCount        Int?
+  readingTime      Int?             // Estimated reading time in minutes
+  
+  // Associated data sources used for this report
+  sources          NormalizedReport[]
+  
+  // LLM generation metadata
+  llmProvider      LlmProvider?
+  llmModel         String?
+  generationTime   Int?             // milliseconds
+  temperature      Float?
+  promptTokens     Int?
+  completionTokens Int?
+  totalTokens      Int?
+  
+  // Usage analytics
+  viewCount        Int              @default(0)
+  downloadCount    Int              @default(0)
+  lastViewedAt     DateTime?
+  lastDownloadedAt DateTime?
+  
+  // Export tracking
+  exports          ReportExport[]
+  
+  // Template used
+  templateId       String?
+  template         ReportTemplate?  @relation(fields: [templateId], references: [id])
+  
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@index([status, isDeleted])
+  @@index([generatedAt])
+  @@index([parentId])
+  @@index([searchVector])
+  @@index([llmProvider])
+  @@index([combinedHeadline])
+  @@index([executiveSummary])
+  @@index([outlookNext72h])
+  @@map("space_weather_reports")
+}
+
+// Report export history and tracking
+model ReportExport {
+  id           String       @id @default(cuid())
+  reportId     String
+  format       ExportFormat
+  filename     String
+  filePath     String?      // If stored locally
+  fileSize     Int?         // In bytes
+  downloadUrl  String?      // If using cloud storage
+  
+  // Export metadata
+  requestedBy  String?      // User identifier
+  ipAddress    String?
+  userAgent    String?
+  
+  report       SpaceWeatherReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  
+  createdAt    DateTime     @default(now())
+  expiresAt    DateTime?    // For temporary download links
+  
+  @@index([reportId])
+  @@index([format])
+  @@index([createdAt])
+  @@map("report_exports")
+}
+
+// Normalized data from various space weather sources
+model NormalizedReport {
+  id               String           @id @default(cuid())
+  source           SourceType
+  sourceUrl        String?
+  issuedAt         DateTime
+  fetchedAt        DateTime         @default(now())
+  
+  // Core data
+  headline         String
+  summary          String
+  details          String           @db.Text
+  confidence       String?
+  
+  // Validity window
+  validStart       DateTime?
+  validEnd         DateTime?
+  
+  // Hazard assessments
+  geomagneticLevel HazardLevel?
+  geomagneticText  String?
+  radioBlackoutLevel HazardLevel?
+  radioBlackoutText String?
+  radiationStormLevel HazardLevel?
+  radiationStormText String?
+  
+  // Raw data preservation
+  rawPayload       Json?
+  
+  // Processing metadata
+  processingErrors String[]
+  qualityScore     Float?
+  
+  // Relations
+  report           SpaceWeatherReport? @relation(fields: [reportId], references: [id])
+  reportId         String?
+  
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@map("normalized_reports")
+}
+
+// Real-time space weather data points
+model SpaceWeatherData {
+  id          String      @id @default(cuid())
+  timestamp   DateTime
+  dataType    String      // kp_index, solar_wind_speed, xray_flux, etc.
+  value       Float
+  unit        String?
+  source      String?
+  quality     String?     // good, fair, poor
+  
+  createdAt   DateTime    @default(now())
+  
+  @@map("space_weather_data")
+}
+
+// Template configurations for report generation
+model ReportTemplate {
+  id               String   @id @default(cuid())
+  name             String
+  description      String?
+  isDefault        Boolean  @default(false)
+  
+  // Template content
+  markdownTemplate String   @db.Text
+  htmlTemplate     String   @db.Text
+  
+  // Template variables schema
+  variablesSchema  Json?
+  
+  // Relations
+  reports          SpaceWeatherReport[]
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  @@map("report_templates")
+}
+
+// LLM chat conversations for report editing
+model ChatConversation {
+  id           String        @id @default(cuid())
+  reportId     String?
+  provider     LlmProvider
+  model        String
+  
+  messages     ChatMessage[]
+  
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String           @id @default(cuid())
+  conversationId String
+  role           String           // user, assistant, system
+  content        String           @db.Text
+  toolCalls      Json?            // Function calls made by LLM
+  
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  
+  createdAt      DateTime         @default(now())
+  
+  @@map("chat_messages")
+}
+
+// System configuration and settings
+model SystemConfig {
+  id       String   @id @default(cuid())
+  key      String   @unique
+  value    String
+  
+  updatedAt DateTime @updatedAt
+  
+  @@map("system_config")
+}
+
+// Data source fetch logs for monitoring
+model FetchLog {
+  id           String     @id @default(cuid())
+  source       SourceType
+  url          String?
+  success      Boolean
+  responseTime Int?       // milliseconds
+  errorMessage String?
+  httpStatus   Int?
+  dataPoints   Int?       // Number of data points fetched
+  
+  createdAt    DateTime   @default(now())
+  
+  @@map("fetch_logs")
+}

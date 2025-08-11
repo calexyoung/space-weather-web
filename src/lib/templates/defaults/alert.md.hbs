@@ -1,0 +1,197 @@
+# 🚨 SPACE WEATHER ALERT 🚨
+
+**ALERT LEVEL:** {{#if riskAssessment.overall}}{{uppercase riskAssessment.overall}}{{else}}MODERATE{{/if}}  
+**ISSUED:** {{formatDate generatedAt "PPP 'at' p 'UTC'"}}  
+**EFFECTIVE:** Immediately  
+**EXPIRES:** {{formatDate (addHours generatedAt 24) "PPP 'at' p 'UTC'"}}
+
+---
+
+## IMMEDIATE ALERT
+
+# {{combinedHeadline}}
+
+{{executiveSummary}}
+
+---
+
+## CRITICAL CONDITIONS
+
+{{#if sources}}
+{{#each sources}}
+{{#ifCond geomagneticLevel ">=" "G3"}}
+### 🌍 GEOMAGNETIC STORM WARNING - {{geomagneticLevel}}
+**Source:** {{source}}  
+**Issued:** {{formatDate issuedAt "PPP 'at' p"}} UTC  
+**Condition:** {{hazardLevel geomagneticLevel}}
+
+{{geomagneticText}}
+
+**EXPECTED IMPACTS:**
+- Power grid voltage corrections may be required
+- Spacecraft operations may experience surface charging
+- Intermittent satellite navigation and HF radio propagation issues
+- Aurora may be visible at lower latitudes
+
+{{/ifCond}}
+
+{{#ifCond radioBlackoutLevel ">=" "R3"}}
+### 📡 RADIO BLACKOUT WARNING - {{radioBlackoutLevel}}
+**Source:** {{source}}  
+**Issued:** {{formatDate issuedAt "PPP 'at' p"}} UTC  
+**Condition:** {{hazardLevel radioBlackoutLevel}}
+
+{{radioBlackoutText}}
+
+**EXPECTED IMPACTS:**
+- HF radio propagation loss over sunlit side of Earth
+- Navigation degradation for aviation on trans-polar routes
+- Low-frequency navigation signals degraded
+
+{{/ifCond}}
+
+{{#ifCond radiationStormLevel ">=" "S3"}}
+### ⚡ RADIATION STORM WARNING - {{radiationStormLevel}}
+**Source:** {{source}}  
+**Issued:** {{formatDate issuedAt "PPP 'at' p"}} UTC  
+**Condition:** {{hazardLevel radiationStormLevel}}
+
+{{radiationStormText}}
+
+**EXPECTED IMPACTS:**
+- Radiation hazard to passengers and crew in high-latitude, high-altitude flights
+- Satellite operations may experience significant degradation
+- HF radio propagation degraded over polar regions
+
+{{/ifCond}}
+{{/each}}
+{{/if}}
+
+---
+
+## IMMEDIATE ACTION REQUIRED
+
+{{#if recommendations}}
+### OPERATIONAL DIRECTIVES
+{{#each recommendations}}
+{{@index}}. **{{uppercase (substring this 0 1)}}{{substring this 1}}**
+{{/each}}
+{{else}}
+### STANDARD RESPONSE ACTIONS
+1. **ACTIVATE** space weather response protocols immediately
+2. **NOTIFY** all operational personnel of current conditions
+3. **IMPLEMENT** protective measures for critical systems
+4. **MONITOR** conditions continuously for further developments
+5. **COORDINATE** with relevant authorities and service providers
+{{/if}}
+
+### SECTOR-SPECIFIC ACTIONS
+
+#### 🔌 POWER SECTOR
+- Monitor grid stability and voltage levels
+- Prepare backup systems and alternative routing
+- Consider load reduction if conditions worsen
+- Coordinate with regional transmission operators
+
+#### 📡 COMMUNICATIONS & NAVIGATION
+- Implement backup communication protocols
+- Verify satellite system health and performance
+- Prepare for potential HF radio outages
+- Alert users of possible GNSS accuracy degradation
+
+#### ✈️ AVIATION
+- **IMMEDIATE:** Review polar route operations
+- Consider altitude restrictions for high-latitude flights
+- Monitor crew radiation exposure limits
+- Activate alternative communication procedures
+
+#### 🛰️ SATELLITE OPERATIONS
+- Implement spacecraft safing procedures as needed
+- Monitor charging levels and system health
+- Prepare for possible service degradation
+- Consider postponing non-critical maneuvers
+
+---
+
+## FORECAST & EVOLUTION
+
+### Next 24 Hours
+{{forecast72h}}
+
+{{#if riskAssessment}}
+### RISK EVOLUTION
+{{#if riskAssessment.overall}}
+**Current Assessment:** {{riskIcon (lowercase riskAssessment.overall)}} {{uppercase riskAssessment.overall}} RISK
+{{riskAssessment.overall}}
+{{/if}}
+
+{{#if riskAssessment.geomagnetic}}
+**Geomagnetic Evolution:** {{riskAssessment.geomagnetic}}
+{{/if}}
+
+{{#if riskAssessment.radioBlackout}}
+**Communication Evolution:** {{riskAssessment.radioBlackout}}
+{{/if}}
+
+{{#if riskAssessment.radiationStorm}}
+**Radiation Evolution:** {{riskAssessment.radiationStorm}}
+{{/if}}
+{{/if}}
+
+---
+
+## MONITORING & UPDATES
+
+### CONTINUOUS MONITORING ACTIVE
+- **Next Scheduled Update:** {{formatDate (addHours generatedAt 3) "PPP 'at' p 'UTC'"}}
+- **Emergency Updates:** Issued as conditions change
+- **All-Clear:** Will be issued when conditions return to normal
+
+### DATA SOURCES
+{{#each sources}}
+- **{{source}}:** {{#if sourceUrl}}[Link]({{sourceUrl}}){{else}}Direct feed{{/if}} (Quality: {{#if qualityScore}}{{formatPercentage qualityScore}}{{else}}Monitoring{{/if}})
+{{/each}}
+
+### ALERT CRITERIA
+This alert was triggered by:
+{{#each sources}}
+{{#if geomagneticLevel}}
+- {{source}}: Geomagnetic level {{geomagneticLevel}} ({{hazardSeverity geomagneticLevel}}/5 severity)
+{{/if}}
+{{#if radioBlackoutLevel}}
+- {{source}}: Radio blackout level {{radioBlackoutLevel}} ({{hazardSeverity radioBlackoutLevel}}/5 severity)
+{{/if}}
+{{#if radiationStormLevel}}
+- {{source}}: Radiation storm level {{radiationStormLevel}} ({{hazardSeverity radiationStormLevel}}/5 severity)
+{{/if}}
+{{/each}}
+
+---
+
+## EMERGENCY CONTACTS
+
+### CRITICAL OPERATIONS CENTERS
+- **NOAA/SWPC 24/7 Hotline:** [Contact Information Available]
+- **Emergency Coordination:** [Sector-specific emergency numbers]
+- **Technical Support:** [System-specific support channels]
+
+### REPORTING REQUIREMENTS
+- **Infrastructure Operators:** Report any system anomalies immediately
+- **Aviation Sector:** Follow ICAO space weather reporting procedures  
+- **Government Agencies:** Implement continuity of operations protocols
+
+---
+
+**ALERT IDENTIFICATION:** SWA-{{formatDate generatedAt "yyyyMMdd-HHmmss"}}  
+**AUTHORITY:** Automated Space Weather Monitoring System  
+{{#if llmProvider}}**PROCESSING:** {{llmProvider}}{{#if llmModel}} / {{llmModel}}{{/if}}{{/if}}  
+**CLASSIFICATION:** OPERATIONAL ALERT  
+**DISTRIBUTION:** All Subscribers, Emergency Response Network
+
+---
+
+**⚠️ THIS IS AN AUTOMATED ALERT ⚠️**  
+*For life-threatening emergencies, contact local emergency services immediately. This alert provides operational guidance for space weather impacts only.*
+
+**Next Alert Review:** {{formatDate (addHours generatedAt 1) "p 'UTC on' PPP"}}  
+**Continuous Monitoring:** ACTIVE

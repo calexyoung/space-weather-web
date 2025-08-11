@@ -1,0 +1,214 @@
+# Technical Space Weather Analysis
+
+**Report ID:** `SWR-{{formatDate generatedAt "yyyyMMdd-HHmmss"}}`  
+**Generated:** {{formatISODate generatedAt}}  
+**Processing System:** {{default llmProvider "Unknown"}}{{#if llmModel}} / {{llmModel}}{{/if}}  
+**Computation Time:** {{#if generationTime}}{{formatNumber generationTime}} ms{{else}}Unknown{{/if}}  
+
+---
+
+## Analysis Summary
+
+### {{combinedHeadline}}
+
+**Executive Assessment:** {{executiveSummary}}
+
+---
+
+## Data Source Analysis
+
+{{#if sources}}
+### Source Validation and Quality Metrics
+
+{{#each sources}}
+#### {{source}} Data Stream
+```
+Source Identifier: {{source}}
+{{#if sourceUrl}}Endpoint: {{sourceUrl}}{{/if}}
+Issue Timestamp: {{formatISODate issuedAt}}
+Fetch Timestamp: {{formatISODate fetchedAt}}
+{{#if qualityScore}}Data Quality Score: {{formatNumber qualityScore 3}} ({{formatPercentage qualityScore 1}}){{/if}}
+{{#if confidence}}Confidence Level: {{confidence}}{{/if}}
+Processing Errors: {{#if processingErrors}}{{length processingErrors}}{{else}}0{{/if}}
+```
+
+**Observational Summary:**
+{{summary}}
+
+**Detailed Analysis:**
+{{details}}
+
+{{#if validStart}}
+**Validity Window:** {{formatISODate validStart}} to {{formatISODate validEnd}}
+{{/if}}
+
+##### Hazard Level Assessment
+{{#if geomagneticLevel}}
+- **Geomagnetic Storm Level:** {{geomagneticLevel}} (Severity: {{hazardSeverity geomagneticLevel}}/5)
+  {{#if geomagneticText}}- Details: {{geomagneticText}}{{/if}}
+{{/if}}
+
+{{#if radioBlackoutLevel}}
+- **Radio Blackout Level:** {{radioBlackoutLevel}} (Severity: {{hazardSeverity radioBlackoutLevel}}/5)
+  {{#if radioBlackoutText}}- Details: {{radioBlackoutText}}{{/if}}
+{{/if}}
+
+{{#if radiationStormLevel}}
+- **Solar Radiation Storm Level:** {{radiationStormLevel}} (Severity: {{hazardSeverity radiationStormLevel}}/5)
+  {{#if radiationStormText}}- Details: {{radiationStormText}}{{/if}}
+{{/if}}
+
+{{#if processingErrors}}
+##### Processing Anomalies
+{{#each processingErrors}}
+- ERROR: {{this}}
+{{/each}}
+{{/if}}
+
+---
+
+{{/each}}
+{{/if}}
+
+## Physical Phenomena Analysis
+
+{{#if solarActivity}}
+### Solar Dynamics
+{{solarActivity}}
+
+#### Solar Activity Metrics
+- **Current X-ray Background:** Monitoring active
+- **Solar Wind Parameters:** Under observation
+- **Coronal Mass Ejection Activity:** Tracked
+{{/if}}
+
+{{#if geomagneticActivity}}
+### Magnetospheric Response
+{{geomagneticActivity}}
+
+#### Geomagnetic Indices
+- **Kp Index Projection:** Variable
+- **Dst Variation:** Monitored
+- **AE Index Status:** Active monitoring
+{{/if}}
+
+{{#if radiationEnvironment}}
+### Particle Environment
+{{radiationEnvironment}}
+
+#### Radiation Measurements
+- **Proton Flux Levels:** >10 MeV, >100 MeV channels
+- **Electron Environment:** Outer radiation belt
+- **Heavy Ion Composition:** Solar energetic particles
+{{/if}}
+
+---
+
+## Predictive Modeling
+
+### 72-Hour Forecast Model
+{{forecast72h}}
+
+### Probabilistic Risk Assessment
+
+{{#if riskAssessment}}
+#### Quantitative Risk Analysis
+
+{{#if riskAssessment.geomagnetic}}
+**Geomagnetic Risk Vector:**
+{{riskAssessment.geomagnetic}}
+{{/if}}
+
+{{#if riskAssessment.radioBlackout}}
+**HF Communication Risk Vector:**
+{{riskAssessment.radioBlackout}}
+{{/if}}
+
+{{#if riskAssessment.radiationStorm}}
+**SEP Event Risk Vector:**
+{{riskAssessment.radiationStorm}}
+{{/if}}
+
+{{#if riskAssessment.overall}}
+**Composite Risk Assessment:**
+{{riskAssessment.overall}}
+{{/if}}
+{{/if}}
+
+### Uncertainty Analysis
+
+{{#if sources}}
+- **Data Source Diversity:** {{length sources}} independent streams
+- **Temporal Coverage:** Multi-source temporal validation
+{{#each sources}}
+- {{source}}: {{#if qualityScore}}Quality={{formatPercentage qualityScore 1}}{{else}}Quality=Unknown{{/if}}{{#if confidence}}, Confidence={{confidence}}{{/if}}
+{{/each}}
+{{/if}}
+
+{{#if confidenceScore}}
+- **Aggregate Confidence:** {{confidenceBar confidenceScore}} ({{formatPercentage confidenceScore 2}})
+{{/if}}
+
+---
+
+## Operational Implications
+
+{{#if recommendations}}
+### Technical Recommendations
+
+{{#each recommendations}}
+{{@index}}. {{this}}
+{{/each}}
+{{/if}}
+
+### System Impact Assessment
+
+#### Satellite Operations
+- **LEO Environment:** Variable flux conditions
+- **GEO Environment:** Charging risk assessment
+- **Deep Space:** Solar particle monitoring
+
+#### Ground-Based Infrastructure
+- **Power Grid Vulnerability:** Geomagnetic induction risk
+- **HF Communications:** Blackout probability assessment
+- **GNSS Performance:** Ionospheric scintillation potential
+
+#### Aviation Sector
+- **Polar Route Operations:** Radiation exposure limits
+- **Communication Reliability:** HF backup requirements
+- **Navigation Accuracy:** GNSS degradation potential
+
+---
+
+## Appendix: Technical Metadata
+
+### Data Processing Pipeline
+```json
+{
+  "generatedAt": "{{formatISODate generatedAt}}",
+  "sourceCount": {{#if sources}}{{length sources}}{{else}}0{{/if}},
+  {{#if llmProvider}}"llmProvider": "{{llmProvider}}",{{/if}}
+  {{#if llmModel}}"llmModel": "{{llmModel}}",{{/if}}
+  {{#if generationTime}}"generationTimeMs": {{generationTime}},{{/if}}
+  {{#if confidenceScore}}"overallConfidence": {{formatNumber confidenceScore 4}},{{/if}}
+  "processingComplete": true
+}
+```
+
+### Source Endpoints
+{{#each sources}}
+- **{{source}}:** {{#if sourceUrl}}{{sourceUrl}}{{else}}Internal data stream{{/if}}
+{{/each}}
+
+### Quality Control
+- **Template Version:** Technical Analysis v2.1
+- **Validation Status:** {{#if sources}}PASSED ({{length sources}} sources validated){{else}}NO DATA{{/if}}
+- **Processing Timestamp:** {{formatISODate generatedAt}}
+
+---
+
+*This technical analysis was generated by automated space weather monitoring systems. Data accuracy and model predictions are subject to observational limitations and forecast uncertainties. Critical operational decisions should incorporate multiple information sources and expert analysis.*
+
+**Document Classification:** Technical Analysis  
+**Distribution:** Authorized Personnel  
+**Next Update:** Continuous monitoring active

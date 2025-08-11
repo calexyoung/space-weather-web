@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma:*)",
+      "Bash(brew services:*)",
+      "Bash(brew install:*)",
+      "Bash(createdb:*)",
+      "Bash(/usr/local/opt/postgresql@15/bin/createdb:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm install:*)",
+      "Bash(open http://localhost:3006/timeline)",
+      "Bash(curl:*)",
+      "Bash(open http://localhost:3003/timeline)",
+      "Bash(npm run build:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(time:*)",
+      "WebFetch(domain:spaceweather.knmi.nl)",
+      "Bash(open http://localhost:3003/timeline/earth)",
+      "Bash(open http://localhost:3007)",
+      "Bash(open http://localhost:3007/timeline/earth)",
+      "Bash(grep:*)",
+      "Bash(open http://localhost:3007/events)"
+    ],
+    "deny": []
+  }
+}
