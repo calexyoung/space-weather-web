@@ -244,10 +244,10 @@ export class HtmlExporter {
    * Get CSS styles based on theme
    */
   private static getStyles(theme: string = 'modern', printOptimized: boolean = false, customStyles?: string): string {
-    let baseStyles = this.getBaseStyles()
-    let themeStyles = this.getThemeStyles(theme)
-    let printStyles = printOptimized ? this.getPrintStyles() : ''
-    let customStylesStr = customStyles || ''
+    const baseStyles = this.getBaseStyles()
+    const themeStyles = this.getThemeStyles(theme)
+    const printStyles = printOptimized ? this.getPrintStyles() : ''
+    const customStylesStr = customStyles || ''
 
     return `${baseStyles}\n${themeStyles}\n${printStyles}\n${customStylesStr}`
   }
@@ -739,7 +739,7 @@ export class HtmlExporter {
       custom_metadata: report.jsonMetadata
     }
 
-    let content = `<div class="section">
+    const content = `<div class="section">
       <h2>Metadata</h2>
       <div class="metadata-code">${this.escapeHtml(JSON.stringify(metadata, null, 2))}</div>
     </div>`

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { KpIndexDataSchema, type KpIndexData } from '@/lib/widgets/widget-types'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Fetch real Kp data from NOAA SWPC
     const [kpResponse, forecastResponse] = await Promise.all([
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const forecastData = forecastResponse ? await forecastResponse.json().catch(() => []) : []
     
     // Skip header row and get valid data
-    const validKp = kpData.slice(1).filter((row: any[]) => 
+    const validKp = kpData.slice(1).filter((row: unknown[]) => 
       row.length >= 2 && 
       row[1] !== null &&
       row[1] !== ''
@@ -49,16 +49,16 @@ export async function GET(request: NextRequest) {
     }
     
     // Process forecast data
-    const validForecast = forecastData.slice(1).filter((row: any[]) => 
+    const validForecast = forecastData.slice(1).filter((row: unknown[]) => 
       row.length >= 2 && 
       row[1] !== null &&
       row[1] !== ''
     )
     
-    const forecast3h = validForecast.slice(0, 8).map((item: any[]) => {
-      const kpValue = parseFloat(item[1]) || 2.0
+    const forecast3h = validForecast.slice(0, 8).map((item: unknown[]) => {
+      const kpValue = parseFloat(String(item[1])) || 2.0
       return {
-        time: new Date(item[0]),
+        time: new Date(String(item[0])),
         kp: Math.round(kpValue * 10) / 10, // Round to 1 decimal place
         level: getKpLevelName(kpValue),
       }
@@ -79,7 +79,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Calculate trend based on recent Kp values
-    const recentKp = validKp.slice(-5).map((row: any[]) => parseFloat(row[1]))
+    const recentKp = validKp.slice(-5).map((row: unknown[]) => parseFloat(String(row[1])))
     let trend: 'increasing' | 'decreasing' | 'stable' = 'stable'
     
     if (recentKp.length >= 2) {

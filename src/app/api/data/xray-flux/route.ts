@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { XrayFluxDataSchema, type XrayFluxData } from '@/lib/widgets/widget-types'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Fetch real GOES satellite X-ray data from NOAA
     const [xrayResponse, eventsResponse] = await Promise.all([
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     const eventsData = eventsResponse ? await eventsResponse.json().catch(() => []) : []
     
     // Get the most recent valid measurements
-    const validData = xrayData.filter((d: any) => 
+    const validData = xrayData.filter((d: Record<string, unknown>) => 
       d.flux !== null && 
       d.observed_flux !== null &&
       !d.electron_contaminaton // Filter out contaminated data
@@ -32,8 +32,8 @@ export async function GET(request: NextRequest) {
     }
     
     // Get latest measurements for each wavelength
-    const shortWaveData = validData.filter((d: any) => d.energy === '0.05-0.4nm')
-    const longWaveData = validData.filter((d: any) => d.energy === '0.1-0.8nm')
+    const shortWaveData = validData.filter((d: Record<string, unknown>) => d.energy === '0.05-0.4nm')
+    const longWaveData = validData.filter((d: Record<string, unknown>) => d.energy === '0.1-0.8nm')
     
     const latestShort = shortWaveData[shortWaveData.length - 1]
     const latestLong = longWaveData[longWaveData.length - 1]
@@ -55,20 +55,20 @@ export async function GET(request: NextRequest) {
     // Calculate background level (minimum over last 100 points)
     const recentLong = longWaveData.slice(-100)
     const backgroundFlux = recentLong.length > 0 
-      ? Math.min(...recentLong.map((d: any) => parseFloat(d.flux)))
+      ? Math.min(...recentLong.map((d: Record<string, unknown>) => parseFloat(String(d.flux))))
       : 1e-8
     const backgroundClass = getFlareClassification(backgroundFlux)
     
     // Process recent flares from events data
-    const recentFlares = eventsData.slice(0, 10).map((flare: any) => ({
-      time: new Date(flare.time_tag || flare.peakTime || new Date()),
+    const recentFlares = eventsData.slice(0, 10).map((flare: Record<string, unknown>) => ({
+      time: new Date(String(flare.time_tag || flare.peakTime || new Date())),
       peak: flare.classType || `C${Math.floor(Math.random() * 9 + 1)}.${Math.floor(Math.random() * 10)}`,
       duration: flare.duration || Math.floor(Math.random() * 60) + 10,
       location: flare.sourceLocation || 'N/A',
-    })).filter((f: any) => f.time > new Date(Date.now() - 24 * 60 * 60 * 1000))
+    })).filter((f: { time: Date }) => f.time > new Date(Date.now() - 24 * 60 * 60 * 1000))
     
     // Calculate trend based on last 10 data points
-    const recentFluxes = longWaveData.slice(-10).map((d: any) => parseFloat(d.flux))
+    const recentFluxes = longWaveData.slice(-10).map((d: Record<string, unknown>) => parseFloat(String(d.flux)))
     let trend: 'increasing' | 'decreasing' | 'stable' = 'stable'
     if (recentFluxes.length >= 2) {
       const firstHalf = recentFluxes.slice(0, Math.floor(recentFluxes.length / 2))
@@ -102,9 +102,9 @@ export async function GET(request: NextRequest) {
         level: `${longWave.class}${longWave.magnitude.toFixed(1)}`,
       },
       background: `${backgroundClass.class}${backgroundClass.magnitude.toFixed(1)}`,
-      recentFlares: recentFlares.sort((a: any, b: any) => b.time.getTime() - a.time.getTime()),
+      recentFlares: recentFlares.sort((a: { time: Date }, b: { time: Date }) => b.time.getTime() - a.time.getTime()),
       trend: trend,
-      riskLevel: getRiskLevel(Math.max(shortWaveFlux, longWaveFlux)) as any,
+      riskLevel: getRiskLevel(Math.max(shortWaveFlux, longWaveFlux)) as 'Minimal' | 'Minor' | 'Moderate' | 'Strong' | 'Severe',
     }
 
     // Validate the data structure

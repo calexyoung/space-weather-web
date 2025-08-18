@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { AuroraForecastSchema, type AuroraForecast } from '@/lib/widgets/widget-types'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // TODO: Replace with real aurora forecast data from NOAA/SWPC
     // For now, return mock data that simulates realistic aurora conditions
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     )
     
     const mockData: AuroraForecast = {
-      currentActivity: currentActivity as any,
+      currentActivity: currentActivity as 'Quiet' | 'Unsettled' | 'Minor' | 'Moderate' | 'Strong',
       visibility: {
         northern: {
           latitudeThreshold: Math.round(northernLatitude * 10) / 10, // Round to 1 decimal place
@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
         }
       })),
       peakTime: peakForecast.time,
-      confidence: ['Low', 'Medium', 'High'][Math.floor(Math.random() * 3)] as any,
+      confidence: ['Low', 'Medium', 'High'][Math.floor(Math.random() * 3)] as 'Low' | 'Medium' | 'High',
     }
 
     // Validate the data structure

@@ -186,7 +186,7 @@ function getEventTypeDescription(type: string): string {
 }
 
 function formatEventDetails(event: any): string {
-  let details = [];
+  const details = [];
   
   if (event.classType) details.push(`**Class:** ${event.classType}`);
   if (event.sourceLocation) details.push(`**Source:** ${event.sourceLocation}`);

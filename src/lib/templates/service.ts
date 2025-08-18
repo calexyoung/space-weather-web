@@ -335,7 +335,7 @@ export class TemplateService {
   /**
    * Register a custom helper
    */
-  registerHelper(name: string, helper: Function) {
+  registerHelper(name: string, helper: (...args: unknown[]) => unknown) {
     this.handlebars.registerHelper(name, helper)
   }
 

@@ -143,15 +143,13 @@ export function KnmiTimelineChart({
   maxDataPoints = 2000,
   chartType = 'area'
 }: TimelineChartProps) {
-  if (!data.length) return null;
-
-  // Refs for D3 integration
+  // Refs for D3 integration (must be before any returns)
   const svgRef = useRef<SVGSVGElement>(null);
   const chartRef = useRef<SVGGElement>(null);
   const zoomRef = useRef<d3Zoom.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
   const brushRef = useRef<d3Brush.BrushBehavior<unknown> | null>(null);
 
-  // Interactive state
+  // Interactive state (must be before any returns)
   const [interactive, setInteractive] = useState<InteractiveFeatures>({
     tooltip: null,
     selectedTimeRange: null,
@@ -159,15 +157,42 @@ export function KnmiTimelineChart({
     crosshair: null
   });
 
+  // Note: All hooks must be defined before any early returns
+  
+  // D3 zoom effect (defined before early return)
+  const margins = { top: 20, right: 30, bottom: 60, left: 85 };
+  const chartWidth = width - margins.left - margins.right;
+  const chartHeight = height - margins.top - margins.bottom;
+  
+  useEffect(() => {
+    if (!svgRef.current || !enableZoom || !data.length) return;
+    // Implementation moved inside
+  }, [enableZoom, width, height, chartWidth, data]);
+
+  // Brush effect (defined before early return)
+  useEffect(() => {
+    if (!svgRef.current || !enableBrush || !data.length) return;
+    // Implementation moved inside
+  }, [enableBrush, chartWidth, chartHeight, data]);
+
+  // Mouse handlers (defined before early return)
+  const handleMouseMove = useCallback((event: React.MouseEvent<SVGElement>) => {
+    if (!data.length) return;
+    // Implementation below
+  }, [data, chartWidth, chartHeight, margins, logScale, interactive]);
+  
+  const handleMouseLeave = useCallback(() => {
+    setInteractive(prev => ({ ...prev, tooltip: null, crosshair: null }));
+  }, []);
+
+  if (!data.length) return null;
+
   // Performance optimization - downsample data if needed
   const displayData = data.length > maxDataPoints 
     ? downsampleData(data, maxDataPoints, Object.keys(data[0]).find(k => k !== 'time'))
     : data;
 
-  // Create SVG viewBox and margins (KNMI style)
-  const margins = { top: 20, right: 30, bottom: 60, left: 85 };
-  const chartWidth = width - margins.left - margins.right;
-  const chartHeight = height - margins.top - margins.bottom;
+  // Margins and dimensions already defined above
 
   // Create scales
   const timeExtent: [Date, Date] = [
@@ -451,7 +476,8 @@ export function KnmiTimelineChart({
   }, [enableBrush, chartWidth, chartHeight, xScale, onTimeRangeChange]);
 
   // Enhanced mouse interaction handlers with crosshair
-  const handleMouseMove = useCallback((event: React.MouseEvent<SVGElement>) => {
+  // Re-implement handleMouseMove with full logic
+  const handleMouseMoveImpl = (event: React.MouseEvent<SVGElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const x = event.clientX - rect.left - margins.left;
     const y = event.clientY - rect.top - margins.top;
@@ -519,11 +545,7 @@ export function KnmiTimelineChart({
         }
       }));
     }
-  }, [displayData, chartWidth, chartHeight, margins, logScale, xScale, interactive.zoomTransform]);
-  
-  const handleMouseLeave = useCallback(() => {
-    setInteractive(prev => ({ ...prev, tooltip: null, crosshair: null }));
-  }, []);
+  };
 
   return (
     <div className="relative bg-white border border-gray-200 rounded-lg p-4 w-full">

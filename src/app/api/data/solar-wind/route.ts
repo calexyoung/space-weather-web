@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { SolarWindDataSchema, type SolarWindData } from '@/lib/widgets/widget-types'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Fetch real ACE/DSCOVR satellite data from NOAA
     const [plasmaResponse, magResponse] = await Promise.all([
@@ -21,14 +21,14 @@ export async function GET(request: NextRequest) {
     const magData = await magResponse.json()
     
     // Skip header row and get valid data
-    const validPlasma = plasmaData.slice(1).filter((row: any[]) => 
+    const validPlasma = plasmaData.slice(1).filter((row: unknown[]) => 
       row.length >= 4 && 
       row[1] !== null && // density
       row[2] !== null && // speed
       row[3] !== null   // temperature
     )
     
-    const validMag = magData.slice(1).filter((row: any[]) => 
+    const validMag = magData.slice(1).filter((row: unknown[]) => 
       row.length >= 7 && 
       row[6] !== null // Bt
     )
@@ -54,10 +54,10 @@ export async function GET(request: NextRequest) {
     const pressureRam = density * speed * speed * 1.67e-6
     
     // Calculate trends based on recent data
-    const calculateTrend = (data: any[], index: number) => {
+    const calculateTrend = (data: unknown[][], index: number) => {
       if (data.length < 10) return 'stable' as const
       
-      const recent = data.slice(-10).map(row => parseFloat(row[index]))
+      const recent = data.slice(-10).map(row => parseFloat(String(row[index])))
       const firstHalf = recent.slice(0, 5).reduce((a, b) => a + b, 0) / 5
       const secondHalf = recent.slice(5).reduce((a, b) => a + b, 0) / 5
       

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { SatelliteEnvironmentSchema, type SatelliteEnvironment } from '@/lib/widgets/widget-types'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // TODO: Replace with real satellite environment data from multiple sources
     // For now, return mock data that simulates realistic space environment conditions
@@ -97,9 +97,9 @@ export async function GET(request: NextRequest) {
     
     const mockData: SatelliteEnvironment = {
       riskLevels: {
-        geomagnetic: geomagneticRisk as any,
-        radiation: radiationRisk as any,
-        radio: radioRisk as any,
+        geomagnetic: geomagneticRisk as 'None' | 'Minor' | 'Moderate' | 'Strong',
+        radiation: radiationRisk as 'None' | 'Minor' | 'Moderate' | 'Severe',
+        radio: radioRisk as 'None' | 'Minor' | 'Moderate' | 'Strong',
       },
       particleFlux: {
         electrons: electronFlux,
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
         temperature: atmosphericTemp,
       },
       hazards,
-      overallRisk: overallRisk as any,
+      overallRisk: overallRisk as 'Minimal' | 'Low' | 'Moderate' | 'High' | 'Critical',
     }
 
     // Validate the data structure

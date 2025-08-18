@@ -16,14 +16,14 @@ import {
 if (typeof EventTarget === 'undefined') {
   // Simple polyfill
   (global as any).EventTarget = class {
-    private listeners: { [key: string]: Function[] } = {}
+    private listeners: { [key: string]: ((...args: unknown[]) => void)[] } = {}
     
-    addEventListener(type: string, listener: Function) {
+    addEventListener(type: string, listener: (...args: unknown[]) => void) {
       if (!this.listeners[type]) this.listeners[type] = []
       this.listeners[type].push(listener)
     }
     
-    removeEventListener(type: string, listener: Function) {
+    removeEventListener(type: string, listener: (...args: unknown[]) => void) {
       if (this.listeners[type]) {
         const index = this.listeners[type].indexOf(listener)
         if (index > -1) this.listeners[type].splice(index, 1)

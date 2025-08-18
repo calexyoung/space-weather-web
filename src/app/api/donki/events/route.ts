@@ -8,11 +8,11 @@ async function fetchNOAAFlares(startDate: Date, endDate: Date) {
     
     const flares = await response.json();
     return flares
-      .filter((f: any) => {
-        const flareTime = new Date(f.time_tag || f.begin_time);
+      .filter((f: Record<string, unknown>) => {
+        const flareTime = new Date(String(f.time_tag || f.begin_time));
         return flareTime >= startDate && flareTime <= endDate;
       })
-      .map((f: any) => ({
+      .map((f: Record<string, unknown>) => ({
         eventID: `${f.time_tag}-FLR-NOAA`,
         eventType: 'FLR',
         beginTime: f.begin_time || f.time_tag,
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
         }
         
         const data = await response.json();
-        return data.map((event: any) => ({
+        return data.map((event: Record<string, unknown>) => ({
           ...event,
           eventType: type,
           eventID: event.flrID || event.cmeID || event.sepID || event.ipsID || event.mpcID || event.gstID || event.rbeID || `${type}-${Date.now()}-${Math.random()}`
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
     });
 
     const eventResults = await Promise.all(eventPromises);
-    let allEvents = eventResults.flat();
+    const allEvents = eventResults.flat();
 
     // If DONKI fails (likely due to rate limiting), try to get data from NOAA SWPC
     if (allEvents.length === 0) {

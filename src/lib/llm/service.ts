@@ -341,7 +341,7 @@ Guidelines:
   private async convertMarkdownToHtml(markdown: string): Promise<string> {
     // Simple markdown to HTML conversion
     // In production, use a proper markdown parser like 'marked' or 'remark'
-    let html = markdown
+    const html = markdown
       .replace(/^# (.+$)/gm, '<h1>$1</h1>')
       .replace(/^## (.+$)/gm, '<h2>$1</h2>')
       .replace(/^### (.+$)/gm, '<h3>$1</h3>')
