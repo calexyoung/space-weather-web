@@ -18,7 +18,9 @@ class TemplateCache {
   set(key: string, template: CompiledTemplate) {
     if (this.cache.size >= this.maxSize) {
       const firstKey = this.cache.keys().next().value
-      this.cache.delete(firstKey)
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey)
+      }
     }
     this.cache.set(key, template)
   }
@@ -318,7 +320,7 @@ export class TemplateService {
         generationTimeSeconds: variables.generationTime ? variables.generationTime / 1000 : undefined,
       }
 
-      return compiledTemplate(contextVariables)
+      return compiledTemplate(contextVariables) as string
     } catch (error) {
       throw new Error(`Template rendering failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }

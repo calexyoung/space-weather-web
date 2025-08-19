@@ -3,18 +3,25 @@ import { fetchHAPIDataWithFallback, SPACE_WEATHER_DATASETS } from '@/lib/hapi/ha
 import { format, subDays } from 'date-fns'
 
 export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
+  const startDate = searchParams.get('start')
+  const endDate = searchParams.get('end')
+  
+  // Default to last 3 days if no dates provided
+  const end = endDate ? new Date(endDate) : new Date()
+  const start = startDate ? new Date(startDate) : subDays(end, 3)
+  
   try {
-    const searchParams = request.nextUrl.searchParams
-    const startDate = searchParams.get('start')
-    const endDate = searchParams.get('end')
-    
-    // Default to last 3 days if no dates provided
-    const end = endDate ? new Date(endDate) : new Date()
-    const start = startDate ? new Date(startDate) : subDays(end, 3)
     
     // Fetch solar wind data from HAPI
+    const servers = SPACE_WEATHER_DATASETS.solar_wind.servers.map(server => ({
+      server: server.server,
+      dataset: server.dataset,
+      parameters: [...server.parameters],
+      timeParameter: server.timeParameter
+    }))
     const result = await fetchHAPIDataWithFallback(
-      SPACE_WEATHER_DATASETS.solar_wind.servers,
+      servers,
       [start, end]
     )
     

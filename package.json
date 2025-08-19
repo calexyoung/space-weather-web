@@ -48,6 +48,7 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.16",
+    "@types/d3-dsv": "^3.0.7",
     "@types/handlebars": "^4.0.40",
     "@types/node": "^20",
     "@types/react": "^19",

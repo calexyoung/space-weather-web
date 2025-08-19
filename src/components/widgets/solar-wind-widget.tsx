@@ -74,7 +74,7 @@ export default function SolarWindWidget({ config, onConfigChange }: SolarWindWid
     isLoading,
     hasError: !!error,
     errorMessage: error || undefined,
-    lastUpdated,
+    lastUpdated: lastUpdated || undefined,
     isOffline,
   }
 

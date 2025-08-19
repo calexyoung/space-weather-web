@@ -416,10 +416,13 @@ export function KnmiTimelineChart({
 
         // Debounced time range change callback
         if (onTimeRangeChange && xScale.invert) {
-          const debouncedCallback = debounce((transform: d3Zoom.ZoomTransform) => {
-            const newStart = xScale.invert((0 - transform.x) / transform.k) as Date;
-            const newEnd = xScale.invert((chartWidth - transform.x) / transform.k) as Date;
-            onTimeRangeChange([newStart, newEnd]);
+          const debouncedCallback = debounce((...args: unknown[]) => {
+            const transform = args[0] as d3Zoom.ZoomTransform;
+            if (xScale.invert) {
+              const newStart = xScale.invert((0 - transform.x) / transform.k) as Date;
+              const newEnd = xScale.invert((chartWidth - transform.x) / transform.k) as Date;
+              onTimeRangeChange([newStart, newEnd]);
+            }
           }, 300);
           
           debouncedCallback(transform);
@@ -460,7 +463,7 @@ export function KnmiTimelineChart({
 
         // Clear brush selection after a delay
         setTimeout(() => {
-          svg.select('.brush').call(brush.clear);
+          svg.select('.brush').call(brush.clear as any);
         }, 1000);
       });
 

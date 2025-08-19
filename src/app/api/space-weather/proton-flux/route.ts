@@ -13,8 +13,14 @@ export async function GET(request: NextRequest) {
     const start = startDate ? new Date(startDate) : subDays(end, 3)
     
     // Fetch proton flux data from HAPI
+    const servers = SPACE_WEATHER_DATASETS.proton_flux.servers.map(server => ({
+      server: server.server,
+      dataset: server.dataset,
+      parameters: [...server.parameters],
+      timeParameter: server.timeParameter
+    }))
     const result = await fetchHAPIDataWithFallback(
-      SPACE_WEATHER_DATASETS.proton_flux.servers,
+      servers,
       [start, end]
     )
     

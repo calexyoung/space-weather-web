@@ -1,7 +1,8 @@
 import { OpenAI } from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { LlmProvider, LlmConfig } from '@/lib/types/space-weather'
+import { LlmProviderEnum } from '@/lib/types/space-weather'
+import { LlmConfig } from '@/lib/types/api'
 
 // Base interface for all LLM providers
 export interface LlmProviderInterface {
@@ -30,7 +31,7 @@ export class OpenAiProvider implements LlmProviderInterface {
     this.client = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     })
-    this.defaultModel = 'gpt-4'
+    this.defaultModel = 'gpt-4o'
   }
 
   async generateCompletion(prompt: string, config?: Partial<LlmConfig>): Promise<string> {
@@ -72,10 +73,19 @@ export class OpenAiProvider implements LlmProviderInterface {
     if (choice?.message?.tool_calls) {
       return {
         content: choice.message.content || undefined,
-        toolCalls: choice.message.tool_calls.map(tc => ({
-          name: tc.function.name,
-          parameters: JSON.parse(tc.function.arguments),
-        })),
+        toolCalls: choice.message.tool_calls.map(tc => {
+          if ('function' in tc) {
+            return {
+              name: tc.function.name,
+              parameters: JSON.parse(tc.function.arguments),
+            }
+          }
+          // Handle other tool call types if needed
+          return {
+            name: 'unknown',
+            parameters: {},
+          }
+        }),
       }
     }
 
@@ -115,7 +125,7 @@ export class AnthropicProvider implements LlmProviderInterface {
     this.client = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY,
     })
-    this.defaultModel = 'claude-3-haiku-20240307'
+    this.defaultModel = 'claude-3-5-sonnet-20241022'
   }
 
   async generateCompletion(prompt: string, config?: Partial<LlmConfig>): Promise<string> {
@@ -191,7 +201,7 @@ export class GoogleProvider implements LlmProviderInterface {
 
   constructor() {
     this.client = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '')
-    this.defaultModel = 'gemini-pro'
+    this.defaultModel = 'gemini-1.5-flash'
   }
 
   async generateCompletion(prompt: string, config?: Partial<LlmConfig>): Promise<string> {
@@ -273,7 +283,7 @@ export class GoogleProvider implements LlmProviderInterface {
 }
 
 // Provider factory
-export function createLlmProvider(provider: LlmProvider): LlmProviderInterface {
+export function createLlmProvider(provider: LlmProviderEnum): LlmProviderInterface {
   switch (provider) {
     case 'OPENAI':
       return new OpenAiProvider()
@@ -288,6 +298,6 @@ export function createLlmProvider(provider: LlmProvider): LlmProviderInterface {
 
 // Default provider based on environment
 export function getDefaultProvider(): LlmProviderInterface {
-  const defaultProvider = (process.env.DEFAULT_LLM_PROVIDER as LlmProvider) || 'OPENAI'
+  const defaultProvider = (process.env.DEFAULT_LLM_PROVIDER as LlmProviderEnum) || 'OPENAI'
   return createLlmProvider(defaultProvider)
 }

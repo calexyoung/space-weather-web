@@ -479,7 +479,7 @@ export default function EventsPage() {
                       {selectedEvent.linkedEvents.map(linked => (
                         <div key={linked.activityID} className="p-2 bg-gray-50 rounded">
                           <div className="font-mono text-sm">{linked.activityID}</div>
-                          <Badge className={getEventTypeColor(linked.eventType)} size="sm">
+                          <Badge className={getEventTypeColor(linked.eventType)}>
                             {linked.eventType}
                           </Badge>
                         </div>

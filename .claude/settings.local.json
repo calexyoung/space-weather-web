@@ -19,7 +19,8 @@
       "Bash(open http://localhost:3007)",
       "Bash(open http://localhost:3007/timeline/earth)",
       "Bash(grep:*)",
-      "Bash(open http://localhost:3007/events)"
+      "Bash(open http://localhost:3007/events)",
+      "mcp__brave-search__brave_web_search"
     ],
     "deny": []
   }

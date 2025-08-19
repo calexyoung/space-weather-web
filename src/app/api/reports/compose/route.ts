@@ -122,7 +122,7 @@ export async function POST(request: Request) {
               processingTime,
             },
             llmProvider: validatedRequest.provider || 'OPENAI',
-            llmModel: validatedRequest.model || 'gpt-4',
+            llmModel: validatedRequest.model || 'gpt-4o',
             generationTime: processingTime,
           },
         })
@@ -145,7 +145,7 @@ export async function POST(request: Request) {
       metadata: {
         ...metadata,
         llmProvider: validatedRequest.provider || 'OPENAI',
-        llmModel: validatedRequest.model || 'gpt-4',
+        llmModel: validatedRequest.model || 'gpt-4o',
       },
       processingTime,
       sourceReportsCount: sourceReports.length,

@@ -13,8 +13,14 @@ export async function GET(request: NextRequest) {
     const start = startDate ? new Date(startDate) : subDays(end, 3)
     
     // Fetch Kp index data from HAPI
+    const servers = SPACE_WEATHER_DATASETS.kp_index.servers.map(server => ({
+      server: server.server,
+      dataset: server.dataset,
+      parameters: [...server.parameters],
+      timeParameter: server.timeParameter
+    }))
     const result = await fetchHAPIDataWithFallback(
-      SPACE_WEATHER_DATASETS.kp_index.servers,
+      servers,
       [start, end]
     )
     

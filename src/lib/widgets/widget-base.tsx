@@ -91,13 +91,13 @@ export function WidgetBase({
             {/* Status indicators */}
             <div className="flex items-center space-x-1">
               {dataState.isOffline && (
-                <WifiOff className="w-4 h-4 text-yellow-500" title="Offline" />
+                <WifiOff className="w-4 h-4 text-yellow-500" aria-label="Offline" />
               )}
               {dataState.hasError && (
-                <AlertCircle className="w-4 h-4 text-red-500" title={dataState.errorMessage} />
+                <AlertCircle className="w-4 h-4 text-red-500" aria-label={dataState.errorMessage} />
               )}
               {dataState.isLoading && (
-                <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" title="Loading" />
+                <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" aria-label="Loading" />
               )}
             </div>
 

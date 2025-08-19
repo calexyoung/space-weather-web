@@ -40,7 +40,7 @@ export default function ReportGeneratorTab() {
   // Core state
   const [selectedSources, setSelectedSources] = useState<SourceTypeEnum[]>(['NOAA_SWPC', 'UK_MET_OFFICE'])
   const [selectedProvider, setSelectedProvider] = useState<LlmProviderEnum>('OPENAI')
-  const [selectedModel, setSelectedModel] = useState('gpt-4')
+  const [selectedModel, setSelectedModel] = useState('gpt-4o')
   const [customInstructions, setCustomInstructions] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [currentReport, setCurrentReport] = useState<SpaceWeatherReport | null>(null)
@@ -93,9 +93,9 @@ export default function ReportGeneratorTab() {
   const [selectedTemplate, setSelectedTemplate] = useState('standard')
   
   const modelOptions = {
-    OPENAI: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-    ANTHROPIC: ['claude-3-sonnet', 'claude-3-haiku'],
-    GOOGLE: ['gemini-pro', 'gemini-pro-vision']
+    OPENAI: ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+    ANTHROPIC: ['claude-3-5-sonnet-20241022', 'claude-3-haiku'],
+    GOOGLE: ['gemini-1.5-flash', 'gemini-pro-vision']
   }
 
   // Generation logic
@@ -321,7 +321,7 @@ export default function ReportGeneratorTab() {
             <CardContent className="space-y-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">LLM Provider</label>
-                <Select value={selectedProvider} onValueChange={(value: LlmProviderEnum) => setSelectedProvider(value)}>
+                <Select value={selectedProvider} onValueChange={(value) => setSelectedProvider(value as LlmProviderEnum)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

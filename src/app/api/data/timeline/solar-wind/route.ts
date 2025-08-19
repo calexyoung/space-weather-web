@@ -31,8 +31,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch real solar wind data from HAPI servers
+    // Create a mutable copy of the servers config for the function
+    const servers = SPACE_WEATHER_DATASETS.solar_wind.servers.map(server => ({
+      server: server.server,
+      dataset: server.dataset,
+      parameters: [...server.parameters],
+      timeParameter: server.timeParameter
+    }))
+    
     const hapiResult = await fetchHAPIDataWithFallback(
-      SPACE_WEATHER_DATASETS.solar_wind.servers,
+      servers,
       [startTime, now]
     )
 

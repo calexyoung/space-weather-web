@@ -78,7 +78,7 @@ export default function AuroraForecastWidget({ config, onConfigChange }: AuroraF
     isLoading,
     hasError: !!error,
     errorMessage: error || undefined,
-    lastUpdated,
+    lastUpdated: lastUpdated || undefined,
     isOffline,
   }
 

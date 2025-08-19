@@ -17,8 +17,20 @@ export async function GET() {
       throw new Error(`NOAA API error: ${xrayResponse.status}`)
     }
     
-    const xrayData = await xrayResponse.json()
-    const eventsData = eventsResponse ? await eventsResponse.json().catch(() => []) : []
+    let xrayData, eventsData
+    try {
+      xrayData = await xrayResponse.json()
+    } catch (err) {
+      console.error('Failed to parse X-ray data:', err)
+      throw new Error('Invalid JSON response from X-ray data API')
+    }
+    
+    try {
+      eventsData = eventsResponse && eventsResponse.ok ? await eventsResponse.json() : []
+    } catch (err) {
+      console.warn('Failed to parse events data:', err)
+      eventsData = []
+    }
     
     // Get the most recent valid measurements
     const validData = xrayData.filter((d: Record<string, unknown>) => 
@@ -73,8 +85,8 @@ export async function GET() {
     if (recentFluxes.length >= 2) {
       const firstHalf = recentFluxes.slice(0, Math.floor(recentFluxes.length / 2))
       const secondHalf = recentFluxes.slice(Math.floor(recentFluxes.length / 2))
-      const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length
-      const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length
+      const firstAvg = firstHalf.reduce((a: number, b: number) => a + b, 0) / firstHalf.length
+      const secondAvg = secondHalf.reduce((a: number, b: number) => a + b, 0) / secondHalf.length
       
       if (secondAvg > firstAvg * 1.2) trend = 'increasing'
       else if (secondAvg < firstAvg * 0.8) trend = 'decreasing'

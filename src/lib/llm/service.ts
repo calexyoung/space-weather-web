@@ -1,6 +1,7 @@
 import { createLlmProvider, LlmProviderInterface } from './providers'
 import { LlmFunctions, LlmFunctionExecutor } from './functions'
-import { LlmProvider, LlmConfig, ChatMessage } from '@/lib/types/space-weather'
+import { LlmProviderEnum, ChatMessage } from '@/lib/types/space-weather'
+import { LlmConfig } from '@/lib/types/api'
 import { db } from '@/lib/db'
 
 export interface ChatContext {
@@ -25,7 +26,7 @@ export class LlmService {
   private config: LlmConfig
 
   constructor(
-    providerType: LlmProvider = 'OPENAI',
+    providerType: LlmProviderEnum = 'OPENAI',
     config: Partial<LlmConfig> = {}
   ) {
     this.provider = createLlmProvider(providerType)
@@ -40,16 +41,16 @@ export class LlmService {
     }
   }
 
-  private getDefaultModel(provider: LlmProvider): string {
+  private getDefaultModel(provider: LlmProviderEnum): string {
     switch (provider) {
       case 'OPENAI':
-        return 'gpt-4'
+        return 'gpt-4o'
       case 'ANTHROPIC':
-        return 'claude-3-haiku-20240307'
+        return 'claude-3-5-sonnet-20241022'
       case 'GOOGLE':
-        return 'gemini-pro'
+        return 'gemini-1.5-flash'
       default:
-        return 'gpt-4'
+        return 'gpt-4o'
     }
   }
 
@@ -115,7 +116,7 @@ export class LlmService {
 
         if (conversation) {
           conversationHistory = conversation.messages.map(m => ({
-            role: m.role,
+            role: m.role as "user" | "assistant" | "system",
             content: m.content,
             toolCalls: m.toolCalls
           }))
@@ -360,11 +361,11 @@ Guidelines:
 let defaultService: LlmService | null = null
 
 export function getLlmService(
-  provider?: LlmProvider,
+  provider?: LlmProviderEnum,
   config?: Partial<LlmConfig>
 ): LlmService {
   if (!defaultService) {
-    const defaultProvider = (process.env.DEFAULT_LLM_PROVIDER as LlmProvider) || 'OPENAI'
+    const defaultProvider = (process.env.DEFAULT_LLM_PROVIDER as LlmProviderEnum) || 'OPENAI'
     defaultService = new LlmService(provider || defaultProvider, config)
   }
   return defaultService

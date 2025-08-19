@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const report = generateEventChainReport(eventChain, analyst);
 
     // Format based on requested format
-    let formattedReport = report;
+    let formattedReport: string | object = report;
     if (format === 'html') {
       formattedReport = markdownToHtml(report);
     } else if (format === 'json') {
@@ -93,7 +93,7 @@ The analysis reveals a classical space weather progression beginning with solar 
 - **Analysis Method:** Event linkage analysis using DONKI database
 
 ### Event Classification
-${eventTypes.map(type => `- **${type}**: ${getEventTypeDescription(type)}`).join('\n')}
+${eventTypes.map((type: string) => `- **${type}**: ${getEventTypeDescription(type)}`).join('\n')}
 
 ---
 

@@ -335,7 +335,7 @@ export class LlmFunctionExecutor {
           htmlContent: params.htmlContent,
           jsonMetadata: params.metadata,
           llmProvider: 'OPENAI', // Default, should be dynamic
-          llmModel: 'gpt-4'
+          llmModel: 'gpt-4o'
         }
       })
 

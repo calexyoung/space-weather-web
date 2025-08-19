@@ -35,9 +35,9 @@ export async function POST(request: Request) {
     // If no valid API keys and it's a demo/development scenario, return mock response
     if (!hasValidKeys) {
       if (validatedRequest.streaming) {
-        return handleMockStreamingChat(validatedRequest)
+        return handleMockStreamingChat({ ...validatedRequest, streaming: true })
       } else {
-        return NextResponse.json(createApiResponse({
+        return NextResponse.json(createApiResponse(true, {
           content: "🤖 **Demo Mode**: This is a simulated AI response since no valid API keys are configured.\n\nTo enable real AI chat functionality, please add valid API keys to your `.env` file:\n- `OPENAI_API_KEY` for OpenAI\n- `ANTHROPIC_API_KEY` for Anthropic Claude\n- `GOOGLE_API_KEY` for Google Gemini\n\nFor space weather questions, I can help analyze solar activity, geomagnetic conditions, and space weather impacts when properly configured.",
           conversationId: validatedRequest.conversationId || `demo-${Date.now()}`,
           toolCalls: []
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
 
     // Handle streaming requests differently
     if (validatedRequest.streaming) {
-      return handleStreamingChat(validatedRequest)
+      return handleStreamingChat({ ...validatedRequest, streaming: true })
     }
 
     // Initialize LLM service with optional provider override

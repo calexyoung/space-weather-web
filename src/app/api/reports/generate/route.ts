@@ -68,7 +68,7 @@ export async function POST(request: Request) {
           data: {
             combinedHeadline: reportResult.metadata.title,
             executiveSummary: reportResult.metadata.sections[0] || 'Generated space weather report',
-            outlookNext72h: reportResult.metadata.sections.find(s => 
+            outlookNext72h: reportResult.metadata.sections.find((s: string) => 
               s.toLowerCase().includes('forecast') || 
               s.toLowerCase().includes('outlook')
             ) || 'No forecast section available',
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
             htmlContent: reportResult.htmlContent,
             jsonMetadata: reportResult.metadata,
             llmProvider: validatedRequest.provider || 'OPENAI',
-            llmModel: validatedRequest.model || 'gpt-4',
+            llmModel: validatedRequest.model || 'gpt-4o',
             generationTime,
           },
         })
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
       metadata: {
         ...reportResult.metadata,
         llmProvider: validatedRequest.provider || 'OPENAI',
-        llmModel: validatedRequest.model || 'gpt-4',
+        llmModel: validatedRequest.model || 'gpt-4o',
       },
       generationTime,
       cached: false,

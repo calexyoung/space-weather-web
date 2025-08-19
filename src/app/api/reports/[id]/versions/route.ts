@@ -46,10 +46,10 @@ function createSearchVector(report: any): string {
 // GET /api/reports/[id]/versions - List all versions of a report
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const { searchParams } = new URL(request.url)
     const query = ListVersionsQuerySchema.parse(Object.fromEntries(searchParams))
 
@@ -159,10 +159,10 @@ export async function GET(
 // POST /api/reports/[id]/versions - Create a new version of a report
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const data = CreateVersionSchema.parse(body)
 
@@ -267,7 +267,7 @@ export async function POST(
 // Additional route for version comparison
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { searchParams } = new URL(request.url)
@@ -357,16 +357,17 @@ export async function PUT(
       }
 
       // Create a new version based on the target version
+      const { id: _, ...targetVersionWithoutId } = targetVersion
       const rollbackData = {
-        ...targetVersion,
-        id: undefined,
-        version: undefined, // Will be calculated
+        ...targetVersionWithoutId,
+        version: 1, // Will be recalculated below
         createdAt: new Date(),
         updatedAt: new Date(),
         viewCount: 0,
         downloadCount: 0,
         lastViewedAt: null,
         lastDownloadedAt: null,
+        jsonMetadata: targetVersion.jsonMetadata || undefined,
       }
 
       // Find the latest version number

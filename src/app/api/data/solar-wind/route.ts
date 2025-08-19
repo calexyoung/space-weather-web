@@ -58,8 +58,8 @@ export async function GET() {
       if (data.length < 10) return 'stable' as const
       
       const recent = data.slice(-10).map(row => parseFloat(String(row[index])))
-      const firstHalf = recent.slice(0, 5).reduce((a, b) => a + b, 0) / 5
-      const secondHalf = recent.slice(5).reduce((a, b) => a + b, 0) / 5
+      const firstHalf = recent.slice(0, 5).reduce((a: number, b: number) => a + b, 0) / 5
+      const secondHalf = recent.slice(5).reduce((a: number, b: number) => a + b, 0) / 5
       
       if (secondHalf > firstHalf * 1.1) return 'increasing' as const
       if (secondHalf < firstHalf * 0.9) return 'decreasing' as const

@@ -35,7 +35,7 @@ export interface ListReportsOptions {
   status?: ReportStatus
   llmProvider?: LlmProvider
   search?: string
-  sortBy?: 'generatedAt' | 'updatedAt' | 'viewCount' | 'downloadCount'
+  sortBy?: 'generatedAt' | 'updatedAt' | 'viewCount' | 'downloadCount' | 'relevance'
   sortOrder?: 'asc' | 'desc'
   dateFrom?: Date
   dateTo?: Date

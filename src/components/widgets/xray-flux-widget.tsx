@@ -48,7 +48,9 @@ export default function XrayFluxWidget({ config, onConfigChange }: XrayFluxWidge
 
   const getTrendIndicator = () => {
     if (!data) return null
-    return data.trend
+    if (data.trend === 'increasing') return 'up'
+    if (data.trend === 'decreasing') return 'down'
+    return data.trend // 'stable' maps to 'stable'
   }
 
   const handleToggleExpanded = () => {
@@ -89,7 +91,7 @@ export default function XrayFluxWidget({ config, onConfigChange }: XrayFluxWidge
     isLoading,
     hasError: !!error,
     errorMessage: error || undefined,
-    lastUpdated,
+    lastUpdated: lastUpdated || undefined,
     isOffline,
   }
 

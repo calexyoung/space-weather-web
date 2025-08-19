@@ -36,7 +36,7 @@ export async function GET() {
     const currentKp = parseFloat(latestKp[1]) || 2.0
     
     // Helper function to get Kp level name
-    function getKpLevelName(kp: number): string {
+    function getKpLevelName(kp: number): "Quiet" | "Unsettled" | "Active" | "Minor Storm" | "Moderate Storm" | "Strong Storm" | "Severe Storm" | "Extreme Storm" {
       if (kp < 2) return 'Quiet'
       if (kp < 3) return 'Quiet'
       if (kp < 4) return 'Unsettled'
@@ -85,8 +85,8 @@ export async function GET() {
     if (recentKp.length >= 2) {
       const firstHalf = recentKp.slice(0, Math.floor(recentKp.length / 2))
       const secondHalf = recentKp.slice(Math.floor(recentKp.length / 2))
-      const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length
-      const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length
+      const firstAvg = firstHalf.reduce((a: number, b: number) => a + b, 0) / firstHalf.length
+      const secondAvg = secondHalf.reduce((a: number, b: number) => a + b, 0) / secondHalf.length
       
       if (secondAvg > firstAvg + 0.5) trend = 'increasing'
       else if (secondAvg < firstAvg - 0.5) trend = 'decreasing'

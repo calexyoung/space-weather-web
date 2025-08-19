@@ -7,7 +7,8 @@ export const getApiEndpointForSource = (source: SourceTypeEnum): string => {
   const sourceMapping: Record<SourceTypeEnum, string> = {
     'NOAA_SWPC': 'noaa',
     'UK_MET_OFFICE': 'ukmo', 
-    'HELIO_UCLES': 'helio'
+    'HELIO_UCLES': 'helio',
+    'OTHER': 'other'
   }
   
   return sourceMapping[source] || source.toLowerCase()

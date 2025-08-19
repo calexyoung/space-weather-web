@@ -1,7 +1,7 @@
-// Export all template system components
-export { templateService, TemplateService, TemplateCache } from './service'
-export { templateHelpers, dateHelpers, numberHelpers, spaceWeatherHelpers, textHelpers, conditionalHelpers } from './helpers'
-export {
+// Import required dependencies
+import { templateService, TemplateService, TemplateCache } from './service'
+import { templateHelpers, dateHelpers, numberHelpers, spaceWeatherHelpers, textHelpers, conditionalHelpers } from './helpers'
+import {
   TemplateVariablesSchema,
   TemplateConfigSchema,
   CompiledTemplateSchema,
@@ -19,7 +19,6 @@ export {
 // Template loading utilities
 import { readFile } from 'fs/promises'
 import { join } from 'path'
-import { TemplateConfig, DEFAULT_TEMPLATES } from './schemas'
 
 /**
  * Load a default template by name
@@ -52,8 +51,11 @@ export async function loadDefaultTemplate(templateName: string): Promise<Templat
       version: '1.0.0',
       outputFormat: 'both' as const,
       isActive: true,
+      isDefault: ('isDefault' in defaultConfig) ? defaultConfig.isDefault : false,
       author: 'System',
       tags: [defaultConfig.category],
+      requiredVariables: [...defaultConfig.requiredVariables],
+      optionalVariables: [...defaultConfig.optionalVariables],
       markdownTemplate: markdownContent,
       htmlTemplate: htmlContent,
       cssClasses: {},
@@ -133,7 +135,7 @@ export function createSampleTemplateData() {
       'Power grid operators can maintain standard operational procedures'
     ],
     llmProvider: 'OPENAI' as const,
-    llmModel: 'gpt-4',
+    llmModel: 'gpt-4o',
     generationTime: 2340, // milliseconds
     confidenceScore: 0.89,
   }
@@ -179,4 +181,22 @@ export function getTemplateSystemHealth() {
     helpersRegistered: Object.keys(templateHelpers).length,
     lastChecked: new Date().toISOString()
   }
+}
+
+// Re-export all template system components
+export { templateService, TemplateService, TemplateCache }
+export { templateHelpers, dateHelpers, numberHelpers, spaceWeatherHelpers, textHelpers, conditionalHelpers }
+export {
+  TemplateVariablesSchema,
+  TemplateConfigSchema,
+  CompiledTemplateSchema,
+  RenderContextSchema,
+  ValidationResultSchema,
+  DEFAULT_TEMPLATES,
+  type TemplateVariables,
+  type TemplateConfig,
+  type CompiledTemplate,
+  type RenderContext,
+  type ValidationResult,
+  type DefaultTemplateKeys,
 }

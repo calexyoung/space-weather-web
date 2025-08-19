@@ -43,10 +43,10 @@ function createSearchVector(report: any): string {
 // GET /api/reports/[id] - Get a specific report
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const { searchParams } = new URL(request.url)
     const includeVersions = searchParams.get('includeVersions') === 'true'
     const includeDeleted = searchParams.get('includeDeleted') === 'true'
@@ -157,10 +157,10 @@ export async function GET(
 // PUT /api/reports/[id] - Update a specific report
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const data = UpdateReportSchema.parse(body)
 
@@ -296,10 +296,10 @@ export async function PUT(
 // DELETE /api/reports/[id] - Delete a specific report (soft delete)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const { searchParams } = new URL(request.url)
     const permanent = searchParams.get('permanent') === 'true'
 

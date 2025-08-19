@@ -121,7 +121,7 @@ export default function SatelliteEnvironmentWidget({ config, onConfigChange }: S
     isLoading,
     hasError: !!error,
     errorMessage: error || undefined,
-    lastUpdated,
+    lastUpdated: lastUpdated || undefined,
     isOffline,
   }
 
