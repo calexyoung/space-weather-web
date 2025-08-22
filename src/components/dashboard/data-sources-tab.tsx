@@ -49,14 +49,23 @@ export default function DataSourcesTab() {
       recordCount: 1,
     },
     {
-      source: 'HELIO_UCLES',
-      name: 'HELIO Solar Activity Network',
-      url: 'http://helio.mssl.ucl.ac.uk/helio-vo/solar_activity/current/',
-      status: 'warning',
-      lastFetch: new Date(Date.now() - 15 * 60 * 1000), // 15 minutes ago
-      responseTime: 3000,
-      dataQuality: 0.72,
-      errorMessage: 'Slow response time detected',
+      source: 'BOM_SWS',
+      name: 'Australian BOM Space Weather Services',
+      url: 'https://www.sws.bom.gov.au/Space_Weather/1/1',
+      status: 'online',
+      lastFetch: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+      responseTime: 1100,
+      dataQuality: 0.85,
+      recordCount: 1,
+    },
+    {
+      source: 'SIDC_BELGIUM',
+      name: 'SIDC Belgium Solar Observatory',
+      url: 'https://www.sidc.be/spaceweatherservices/managed/services/archive/product/meu/latest',
+      status: 'online',
+      lastFetch: new Date(Date.now() - 8 * 60 * 1000), // 8 minutes ago
+      responseTime: 1300,
+      dataQuality: 0.85,
       recordCount: 1,
     },
   ]

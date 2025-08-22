@@ -7,6 +7,7 @@ import {
   KpIndexData,
   SolarWindData,
   XrayFluxData,
+  ProtonFluxData,
   AuroraForecast,
   SatelliteEnvironment,
   SparklineData

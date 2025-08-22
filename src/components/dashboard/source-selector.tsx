@@ -65,15 +65,26 @@ export default function SourceSelector({
       responseTime: 720
     },
     {
-      id: 'HELIO_UCLES',
-      name: 'HELIO-UCLES Solar Monitor',
-      description: 'Real-time solar activity monitoring',
-      status: 'warning',
-      lastUpdated: '15 minutes ago',
-      qualityScore: 0.72,
-      dataFreshness: 'Stale',
-      isSelected: selectedSources.includes('HELIO_UCLES'),
-      responseTime: 1200
+      id: 'BOM_SWS',
+      name: 'Australian BOM Space Weather Services',
+      description: 'Australian Space Weather Forecasting Centre data',
+      status: 'online',
+      lastUpdated: '3 minutes ago',
+      qualityScore: 0.85,
+      dataFreshness: 'Fresh',
+      isSelected: selectedSources.includes('BOM_SWS'),
+      responseTime: 580
+    },
+    {
+      id: 'SIDC_BELGIUM',
+      name: 'SIDC Belgium Solar Observatory',
+      description: 'Solar Influences Data Analysis Center reports',
+      status: 'online',
+      lastUpdated: '7 minutes ago',
+      qualityScore: 0.85,
+      dataFreshness: 'Good',
+      isSelected: selectedSources.includes('SIDC_BELGIUM'),
+      responseTime: 650
     }
   ])
 

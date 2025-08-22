@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "python:install": "cd python-backend && python3 -m venv venv && ./venv/bin/pip install -r requirements.txt",
+    "python:dev": "cd python-backend && ./start.sh",
+    "dev:all": "concurrently \"npm run dev\" \"npm run python:dev\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.59.0",
@@ -20,6 +23,8 @@
     "@types/d3-time": "^3.0.4",
     "@types/d3-time-format": "^4.0.3",
     "@types/d3-zoom": "^3.0.8",
+    "@types/dompurify": "^3.0.5",
+    "@types/marked": "^5.0.2",
     "axios": "^1.11.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -32,7 +37,9 @@
     "d3-zoom": "^3.0.0",
     "date-fns": "^4.1.0",
     "handlebars": "^4.7.8",
+    "isomorphic-dompurify": "^2.26.0",
     "lucide-react": "^0.539.0",
+    "marked": "^16.2.0",
     "next": "15.4.6",
     "openai": "^5.12.2",
     "prisma": "^6.13.0",
@@ -54,6 +61,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.0",
     "eslint": "^9",
     "eslint-config-next": "15.4.6",
     "postcss": "^8.5.6",

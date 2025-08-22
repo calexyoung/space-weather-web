@@ -21,6 +21,9 @@ import {
 } from 'lucide-react'
 import { SourceTypeEnum, LlmProviderEnum, SpaceWeatherReport } from '@/lib/types/space-weather'
 import { getSourceApiUrl } from '@/lib/utils/source-mapping'
+import { AggregationService } from '@/lib/report-generator/aggregation-service'
+import { exportService } from '@/lib/report-generator/export-service'
+import { getAllTemplates, getTemplate } from '@/lib/templates/formats'
 
 // Import the new components
 import SourceSelector from './source-selector'
@@ -38,7 +41,7 @@ interface GenerationStep {
 
 export default function ReportGeneratorTab() {
   // Core state
-  const [selectedSources, setSelectedSources] = useState<SourceTypeEnum[]>(['NOAA_SWPC', 'UK_MET_OFFICE'])
+  const [selectedSources, setSelectedSources] = useState<SourceTypeEnum[]>(['NOAA_SWPC', 'UK_MET_OFFICE', 'BOM_SWS', 'SIDC_BELGIUM'])
   const [selectedProvider, setSelectedProvider] = useState<LlmProviderEnum>('OPENAI')
   const [selectedModel, setSelectedModel] = useState('gpt-4o')
   const [customInstructions, setCustomInstructions] = useState('')
@@ -81,21 +84,16 @@ export default function ReportGeneratorTab() {
   const [overallProgress, setOverallProgress] = useState(0)
   const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState<number>()
   
-  // Template options
-  const reportTemplates = [
-    { id: 'standard', name: 'Standard Report', description: 'Comprehensive overview suitable for most users' },
-    { id: 'technical', name: 'Technical Analysis', description: 'Detailed technical report for specialists' },
-    { id: 'public', name: 'Public Summary', description: 'Simplified report for general public' },
-    { id: 'alert', name: 'Alert Bulletin', description: 'Focused on immediate threats and warnings' },
-    { id: 'custom', name: 'Custom Template', description: 'Use custom instructions below' }
-  ]
+  // Template options - now includes social media
+  const reportTemplates = getAllTemplates()
   
   const [selectedTemplate, setSelectedTemplate] = useState('standard')
+  const [selectedExportFormat, setSelectedExportFormat] = useState<'md' | 'html' | 'pdf'>('md')
   
   const modelOptions = {
     OPENAI: ['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'],
     ANTHROPIC: ['claude-3-5-sonnet-20241022', 'claude-3-haiku'],
-    GOOGLE: ['gemini-1.5-flash', 'gemini-pro-vision']
+    GOOGLE: ['gemini-1.5-flash', 'gemini-1.5-pro']
   }
 
   // Generation logic
@@ -242,36 +240,21 @@ export default function ReportGeneratorTab() {
     })
   }
   
-  const handleReportExport = (format: 'md' | 'html' | 'pdf') => {
+  const handleReportExport = async (format: 'md' | 'html' | 'pdf' | 'json') => {
     if (!currentReport) return
     
-    let content: string
-    let filename: string
-    let mimeType: string
-    
-    switch (format) {
-      case 'md':
-        content = currentReport.markdownContent
-        filename = `space-weather-report-${new Date().toISOString().split('T')[0]}.md`
-        mimeType = 'text/markdown'
-        break
-      case 'html':
-        content = currentReport.htmlContent
-        filename = `space-weather-report-${new Date().toISOString().split('T')[0]}.html`
-        mimeType = 'text/html'
-        break
-      default:
-        alert('PDF export coming soon!')
-        return
+    try {
+      const result = await exportService.export(currentReport.markdownContent, {
+        format: format === 'md' ? 'markdown' : format === 'json' ? 'json' : format,
+        includeMetadata: true,
+        includeStyles: format === 'html'
+      })
+      
+      exportService.createDownload(result)
+    } catch (error) {
+      console.error('Export failed:', error)
+      alert(`Failed to export as ${format.toUpperCase()}`)
     }
-    
-    const blob = new Blob([content], { type: mimeType })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    a.click()
-    URL.revokeObjectURL(url)
   }
   
   const getStepIcon = (status: GenerationStep['status']) => {

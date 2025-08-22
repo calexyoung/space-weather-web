@@ -6,7 +6,7 @@ import { z } from 'zod'
 
 const QuerySchema = z.object({
   sources: z.string().optional().transform(val => 
-    val ? val.split(',').filter(s => SourceType.safeParse(s).success) as ("NOAA_SWPC" | "UK_MET_OFFICE" | "HELIO_UCLES" | "OTHER")[] : undefined
+    val ? val.split(',').filter(s => SourceType.safeParse(s).success) as ("NOAA_SWPC" | "UK_MET_OFFICE" | "BOM_SWS" | "SIDC_BELGIUM" | "OTHER")[] : undefined
   ),
   save: z.string().transform(val => val === 'true').default('false'),
   cached: z.string().transform(val => val === 'true').default('false'),

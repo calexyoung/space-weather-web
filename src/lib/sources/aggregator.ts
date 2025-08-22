@@ -1,7 +1,8 @@
 import { NormalizedReport, SourceTypeEnum } from '../types/space-weather'
 import { normalizeNoaaData } from './noaa-scraper'
 import { normalizeUkmoData } from './ukmo-scraper'
-import { normalizeHelioData } from './helio-scraper'
+import { normalizeBomData } from './bom-scraper'
+import { normalizeSidcData } from './sidc-scraper'
 import { db } from '../db'
 import { getErrorMessage } from '../http-client'
 
@@ -36,8 +37,11 @@ export async function fetchSingleSource(
       case 'UK_MET_OFFICE':
         data = await normalizeUkmoData()
         break
-      case 'HELIO_UCLES':
-        data = await normalizeHelioData()
+      case 'BOM_SWS':
+        data = await normalizeBomData()
+        break
+      case 'SIDC_BELGIUM':
+        data = await normalizeSidcData()
         break
       default:
         throw new Error(`Unsupported source: ${source}`)
@@ -125,7 +129,7 @@ export async function fetchSingleSource(
 }
 
 export async function fetchAllSources(
-  sources: SourceTypeEnum[] = ['NOAA_SWPC', 'UK_MET_OFFICE', 'HELIO_UCLES'],
+  sources: SourceTypeEnum[] = ['NOAA_SWPC', 'UK_MET_OFFICE', 'BOM_SWS', 'SIDC_BELGIUM'],
   saveToDb: boolean = false
 ): Promise<AggregatedData> {
   const startTime = Date.now()

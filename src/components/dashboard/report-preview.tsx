@@ -25,7 +25,7 @@ interface ReportPreviewProps {
   report?: SpaceWeatherReport | null
   isGenerating?: boolean
   onEdit?: (content: string) => void
-  onExport?: (format: 'md' | 'html' | 'pdf') => void
+  onExport?: (format: 'md' | 'html' | 'pdf' | 'json') => void
   className?: string
 }
 
@@ -62,7 +62,7 @@ export default function ReportPreview({
     navigator.clipboard.writeText(content)
   }
 
-  const handleExport = (format: 'md' | 'html' | 'pdf') => {
+  const handleExport = (format: 'md' | 'html' | 'pdf' | 'json') => {
     if (onExport) {
       onExport(format)
     }
@@ -301,7 +301,7 @@ export default function ReportPreview({
               className="flex items-center space-x-1"
             >
               <Download className="w-4 h-4" />
-              <span>Download MD</span>
+              <span>Markdown</span>
             </Button>
             
             <Button
@@ -311,7 +311,17 @@ export default function ReportPreview({
               className="flex items-center space-x-1"
             >
               <Download className="w-4 h-4" />
-              <span>Download HTML</span>
+              <span>HTML</span>
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleExport('json')}
+              className="flex items-center space-x-1"
+            >
+              <Download className="w-4 h-4" />
+              <span>JSON</span>
             </Button>
             
             <Button
@@ -322,7 +332,7 @@ export default function ReportPreview({
               disabled
             >
               <Download className="w-4 h-4" />
-              <span>Export PDF</span>
+              <span>PDF</span>
             </Button>
             
             <Button

@@ -240,7 +240,9 @@ export class LlmService {
   private createReportPrompt(sources: any[], customInstructions?: string): string {
     const currentDate = new Date().toLocaleDateString()
     
-    return `You are a space weather analyst creating a comprehensive daily report. 
+    // If custom instructions are provided (including template prompts), use them
+    if (customInstructions) {
+      return `You are a space weather analyst creating a report. 
 
 Date: ${currentDate}
 
@@ -252,7 +254,21 @@ ${index + 1}. ${source.source} (${source.headline})
    Quality Score: ${source.qualityScore || 'N/A'}
 `).join('\n')}
 
-${customInstructions ? `Special Instructions: ${customInstructions}\n` : ''}
+Instructions: ${customInstructions}`
+    }
+    
+    // Otherwise use the default structure
+    return `You are a space weather analyst creating a comprehensive daily report. 
+
+Date: ${currentDate}
+
+Data Sources:
+${sources.map((source, index) => `
+${index + 1}. ${source.source} (${source.headline})
+   Summary: ${source.summary}
+   Details: ${source.details?.substring(0, 500)}...
+   Quality Score: ${source.qualityScore || 'N/A'}
+`).join('\n')}
 
 Create a comprehensive space weather report with the following structure:
 
@@ -282,7 +298,7 @@ Create a comprehensive space weather report with the following structure:
 [HF radio and GPS system impacts]
 
 ### Power Systems
-[Geomagnetically induced current risks]
+[Geomagnically induced current risks]
 
 ## Recommendations
 [Operational recommendations for different sectors]

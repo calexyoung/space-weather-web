@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import SolarFlareTable from '@/components/events/solar-flare-table';
+import CMETable from '@/components/events/cme-table';
 
 interface DonkiEvent {
   eventID: string;
@@ -144,14 +146,19 @@ export default function EventsPage() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return 'Invalid Date';
+    }
+    return date.toLocaleString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      timeZoneName: 'short'
-    });
+      timeZone: 'UTC',
+      hour12: false
+    }) + ' UTC';
   };
 
   const generatePEARSReport = async (eventChain: EventChain) => {
@@ -247,8 +254,8 @@ export default function EventsPage() {
           <TabsList>
             <TabsTrigger value="events">All Events</TabsTrigger>
             <TabsTrigger value="chains">Event Chains</TabsTrigger>
-            <TabsTrigger value="flares">Solar Flares</TabsTrigger>
-            <TabsTrigger value="cmes">CMEs</TabsTrigger>
+            <TabsTrigger value="flares">Solar Flare Table</TabsTrigger>
+            <TabsTrigger value="cmes">CME Table</TabsTrigger>
           </TabsList>
 
           <TabsContent value="events" className="space-y-4">
@@ -377,58 +384,11 @@ export default function EventsPage() {
           </TabsContent>
 
           <TabsContent value="flares" className="space-y-4">
-            <div className="grid gap-4">
-              {filteredEvents.filter(e => e.eventType === 'FLR').map(event => (
-                <Card key={event.eventID}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="font-mono text-lg">{event.eventID}</CardTitle>
-                        <CardDescription>{formatDate(event.beginTime)}</CardDescription>
-                      </div>
-                      <Badge className={getFlareClassColor(event.classType || '')}>
-                        {event.classType}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                      <div><span className="font-medium">Peak:</span> {event.peakTime ? formatDate(event.peakTime) : 'N/A'}</div>
-                      <div><span className="font-medium">Location:</span> {event.sourceLocation || 'N/A'}</div>
-                      <div><span className="font-medium">Active Region:</span> {event.activeRegionNum || 'N/A'}</div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <SolarFlareTable dateRange={dateRange} />
           </TabsContent>
 
           <TabsContent value="cmes" className="space-y-4">
-            <div className="grid gap-4">
-              {filteredEvents.filter(e => e.eventType === 'CME').map(event => (
-                <Card key={event.eventID}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="font-mono text-lg">{event.eventID}</CardTitle>
-                        <CardDescription>{formatDate(event.beginTime)}</CardDescription>
-                      </div>
-                      <Badge className={getEventTypeColor('CME')}>
-                        CME
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                      <div><span className="font-medium">Speed:</span> {event.speed || 'N/A'} km/s</div>
-                      <div><span className="font-medium">Half-Angle:</span> {event.halfAngle || 'N/A'}°</div>
-                      <div><span className="font-medium">Location:</span> {event.sourceLocation || 'N/A'}</div>
-                      <div><span className="font-medium">Catalog:</span> {event.catalog || 'N/A'}</div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <CMETable dateRange={dateRange} />
           </TabsContent>
         </Tabs>
 

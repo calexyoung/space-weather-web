@@ -4,6 +4,7 @@ import { getLlmService } from '@/lib/llm/service'
 import { createApiResponse, createApiError } from '@/lib/validators'
 import { LlmProvider, SourceType } from '@/lib/types/space-weather'
 import { db } from '@/lib/db'
+import { getTemplate } from '@/lib/templates/formats'
 
 // Request schema
 const GenerateReportRequestSchema = z.object({
@@ -51,10 +52,20 @@ export async function POST(request: Request) {
     // Convert source types to strings for the service
     const sourceStrings = validatedRequest.sources.map(source => source.toString())
 
+    // Get template instructions if templateId is provided
+    let instructions = validatedRequest.customInstructions
+    if (validatedRequest.templateId) {
+      const template = getTemplate(validatedRequest.templateId)
+      if (template) {
+        // Combine template prompt with any custom instructions
+        instructions = template.prompt + (instructions ? `\n\nAdditional instructions: ${instructions}` : '')
+      }
+    }
+
     // Generate the report
     const reportResult = await llmService.generateReport(
       sourceStrings,
-      validatedRequest.customInstructions
+      instructions
     )
 
     const generationTime = Date.now() - startTime

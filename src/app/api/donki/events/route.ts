@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     // NASA DONKI API endpoints
     // Note: DEMO_KEY has strict rate limits. Consider getting a free NASA API key at https://api.nasa.gov/
     const baseUrl = 'https://api.nasa.gov/DONKI';
-    const apiKey = process.env.NASA_API_KEY || 'DEMO_KEY';
+    const apiKey = process.env.NASA_API_KEY?.replace(/"/g, '') || 'DEMO_KEY';
     
     const endpoints = {
       FLR: `${baseUrl}/FLR?startDate=${startDateStr}&endDate=${endDateStr}&api_key=${apiKey}`,
@@ -95,11 +95,50 @@ export async function GET(request: NextRequest) {
         }
         
         const data = await response.json();
-        return data.map((event: Record<string, unknown>) => ({
-          ...event,
-          eventType: type,
-          eventID: event.flrID || event.cmeID || event.sepID || event.ipsID || event.mpcID || event.gstID || event.rbeID || `${type}-${Date.now()}-${Math.random()}`
-        }));
+        return data.map((event: Record<string, unknown>) => {
+          // Map the correct time field based on event type
+          let beginTime = '';
+          let endTime = undefined;
+          let peakTime = undefined;
+          
+          switch(type) {
+            case 'FLR':
+              beginTime = String(event.beginTime || event.startTime || '');
+              endTime = event.endTime ? String(event.endTime) : undefined;
+              peakTime = event.peakTime ? String(event.peakTime) : undefined;
+              break;
+            case 'CME':
+              beginTime = String(event.startTime || event.activityStartTime || '');
+              break;
+            case 'SEP':
+              beginTime = String(event.eventTime || event.startTime || '');
+              endTime = event.endTime ? String(event.endTime) : undefined;
+              break;
+            case 'GST':
+              beginTime = String(event.startTime || event.observedTime || '');
+              break;
+            case 'IPS':
+              beginTime = String(event.eventTime || event.startTime || '');
+              break;
+            case 'MPC':
+              beginTime = String(event.eventTime || event.startTime || '');
+              break;
+            case 'RBE':
+              beginTime = String(event.eventTime || event.startTime || '');
+              break;
+            default:
+              beginTime = String(event.startTime || event.eventTime || event.beginTime || '');
+          }
+          
+          return {
+            ...event,
+            eventType: type,
+            eventID: event.flrID || event.cmeID || event.sepID || event.ipsID || event.mpcID || event.gstID || event.rbeID || `${type}-${Date.now()}-${Math.random()}`,
+            beginTime,
+            endTime,
+            peakTime
+          };
+        });
       } catch (error) {
         console.warn(`Error fetching ${type} events:`, error);
         return [];
