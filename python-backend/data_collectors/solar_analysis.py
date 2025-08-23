@@ -1,6 +1,6 @@
 import requests
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Any, Optional
 import json
 from io import BytesIO
@@ -33,7 +33,7 @@ class SolarAnalyzer:
             flare_data = self._fetch_recent_flares()
             
             analysis = {
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': datetime.now(timezone.utc).isoformat(),
                 'solar_indices': solar_data,
                 'sunspot_analysis': sunspot_data,
                 'flare_activity': flare_data,
@@ -70,7 +70,7 @@ class SolarAnalyzer:
     def _fetch_sunspot_data(self) -> Dict[str, Any]:
         """Analyze sunspot regions and complexity"""
         try:
-            url = f"{self.noaa_base_url}/json/regions/solar-regions.json"
+            url = f"{self.noaa_base_url}/json/solar_regions.json"
             response = self.session.get(url, timeout=10)
             response.raise_for_status()
             
@@ -109,7 +109,7 @@ class SolarAnalyzer:
         if HAS_SUNPY:
             try:
                 # Set time range for the last 3 days
-                tend = datetime.utcnow()
+                tend = datetime.now(timezone.utc)
                 tstart = tend - timedelta(days=3)
                 
                 # Format dates for SunPy
@@ -164,7 +164,7 @@ class SolarAnalyzer:
                     
                     # Calculate 24h counts
                     flare_counts_24h = {'B': 0, 'C': 0, 'M': 0, 'X': 0}
-                    cutoff_time = datetime.utcnow() - timedelta(hours=24)
+                    cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
                     
                     for flare in recent_flares:
                         try:
@@ -189,40 +189,140 @@ class SolarAnalyzer:
         
         # Fallback to original NOAA method
         try:
-            url = f"{self.noaa_base_url}/json/goes/primary/xray-flares-1-day.json"
+            # Fetch flare data
+            url = f"{self.noaa_base_url}/json/goes/primary/xray-flares-7-day.json"
             response = self.session.get(url, timeout=10)
             response.raise_for_status()
-            
             flares = response.json()
             
-            flare_counts = {'B': 0, 'C': 0, 'M': 0, 'X': 0}
+            # Also fetch solar regions for potential correlation
+            regions_data = []
+            try:
+                regions_url = f"{self.noaa_base_url}/json/solar_regions.json"
+                regions_response = self.session.get(regions_url, timeout=5)
+                if regions_response.status_code == 200:
+                    regions_data = regions_response.json()
+            except:
+                pass
+            
+            # Filter for flares in the last 24 hours
+            cutoff_time = datetime.now(timezone.utc) - timedelta(hours=24)
+            cutoff_3d = datetime.now(timezone.utc) - timedelta(days=3)
+            
+            flare_counts_24h = {'B': 0, 'C': 0, 'M': 0, 'X': 0}
+            flare_counts_3d = {'B': 0, 'C': 0, 'M': 0, 'X': 0}
             recent_flares = []
             
             for flare in flares:
-                class_type = flare.get('class_type', '')
-                if class_type:
-                    flare_class = class_type[0].upper()
-                    if flare_class in flare_counts:
-                        flare_counts[flare_class] += 1
+                max_class = flare.get('max_class', '')
+                if max_class:
+                    flare_class = max_class[0].upper()
                     
-                    recent_flares.append({
-                        'class': class_type,
-                        'begin': flare.get('begin_time'),
-                        'peak': flare.get('peak_time'),
-                        'end': flare.get('end_time'),
-                        'region': flare.get('region', 'Unknown'),
-                        'location': flare.get('location', ''),
-                        'intensity': flare.get('peak_flux', 0)
-                    })
+                    # Parse the time
+                    try:
+                        # Ensure timezone-aware datetime
+                        time_str = flare.get('max_time', '')
+                        if time_str:
+                            # Handle Z timestamp format properly
+                            if time_str.endswith('Z'):
+                                # Use strptime with timezone for Z format
+                                flare_time = datetime.strptime(time_str, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=timezone.utc)
+                            else:
+                                # Try ISO format
+                                flare_time = datetime.fromisoformat(time_str)
+                                if flare_time.tzinfo is None:
+                                    flare_time = flare_time.replace(tzinfo=timezone.utc)
+                        else:
+                            continue
+                        
+                        # Count for 3-day period
+                        if flare_time > cutoff_3d:
+                            if flare_class in flare_counts_3d:
+                                flare_counts_3d[flare_class] += 1
+                            
+                            # Count for 24-hour period
+                            if flare_time > cutoff_time:
+                                if flare_class in flare_counts_24h:
+                                    flare_counts_24h[flare_class] += 1
+                            
+                            # Try to find the most likely source region
+                            region_num = ''
+                            location = ''
+                            
+                            if regions_data:
+                                # Get today's regions (most recent observation)
+                                today_regions = []
+                                for region in regions_data:
+                                    # Only consider active regions
+                                    if region.get('region') and region.get('location'):
+                                        today_regions.append(region)
+                                
+                                if today_regions:
+                                    # Strategy 1: Match by recent flare activity
+                                    if flare_class == 'X':
+                                        # For X-class, find regions with X-flare history
+                                        candidates = [r for r in today_regions if r.get('x_xray_events', 0) > 0]
+                                        if not candidates:
+                                            # Fall back to regions with high X probability
+                                            candidates = [r for r in today_regions if r.get('x_flare_probability', 0) >= 10]
+                                    elif flare_class == 'M':
+                                        # For M-class, find regions with M-flare history
+                                        candidates = [r for r in today_regions if r.get('m_xray_events', 0) > 0]
+                                        if not candidates:
+                                            # Fall back to regions with high M probability
+                                            candidates = [r for r in today_regions if r.get('m_flare_probability', 0) >= 20]
+                                    else:  # C-class
+                                        # For C-class, find regions with C-flare history
+                                        candidates = [r for r in today_regions if r.get('c_xray_events', 0) > 0]
+                                        if not candidates:
+                                            # Fall back to regions with moderate C probability
+                                            candidates = [r for r in today_regions if r.get('c_flare_probability', 0) >= 30]
+                                    
+                                    if candidates:
+                                        # Pick the most active region from candidates
+                                        best_region = max(candidates, key=lambda r: (
+                                            r.get('x_xray_events', 0) * 100 +
+                                            r.get('m_xray_events', 0) * 10 +
+                                            r.get('c_xray_events', 0)
+                                        ))
+                                        region_num = f"AR{best_region.get('region', '')}"
+                                        location = best_region.get('location', '')
+                                    elif today_regions:
+                                        # No specific match, use the most magnetically complex region
+                                        # Prioritize by magnetic complexity and size
+                                        best_region = max(today_regions, key=lambda r: (
+                                            (1 if r.get('mag_class') in ['BGD', 'BG', 'BD'] else 0) * 1000 +  # Complex fields
+                                            r.get('area', 0) +  # Larger regions
+                                            r.get('c_flare_probability', 0) + 
+                                            r.get('m_flare_probability', 0) * 10 + 
+                                            r.get('x_flare_probability', 0) * 100
+                                        ))
+                                        if best_region:
+                                            region_num = f"AR{best_region.get('region', '')}"
+                                            location = best_region.get('location', '')
+                            
+                            # Add to recent flares list
+                            recent_flares.append({
+                                'class': max_class,
+                                'begin': flare.get('begin_time', ''),
+                                'peak': flare.get('max_time', ''),
+                                'end': flare.get('end_time', ''),
+                                'region': region_num,
+                                'location': location,
+                                'intensity': flare.get('max_xrlong', 0)
+                            })
+                    except Exception as e:
+                        print(f"Error parsing flare time: {e}")
+                        continue
             
             recent_flares.sort(key=lambda x: x['peak'] if x['peak'] else x['begin'], reverse=True)
             
             return {
-                'counts_24h': flare_counts,
-                'counts_3d': flare_counts,  # Same as 24h for NOAA
+                'counts_24h': flare_counts_24h,
+                'counts_3d': flare_counts_3d,
                 'recent_flares': recent_flares[:10],
-                'activity_level': self._classify_activity_level(flare_counts),
-                'data_source': 'NOAA SWPC'
+                'activity_level': self._classify_activity_level(flare_counts_24h),
+                'data_source': 'NOAA GOES'
             }
         except Exception as e:
             print(f"Error fetching flare data: {e}")
