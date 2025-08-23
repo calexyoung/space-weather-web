@@ -76,6 +76,34 @@ export const XrayFluxDataSchema = z.object({
   riskLevel: z.enum(['Minimal', 'Minor', 'Moderate', 'Strong', 'Severe']),
 })
 
+// Proton Flux Widget Data
+export const ProtonFluxDataSchema = z.object({
+  current: z.object({
+    flux10: z.number().positive(), // >10 MeV protons
+    flux50: z.number().positive(), // >50 MeV protons
+    flux100: z.number().positive(), // >100 MeV protons
+    flux500: z.number().positive(), // >500 MeV protons (for aviation)
+  }),
+  stormLevel: z.enum(['None', 'S1', 'S2', 'S3', 'S4', 'S5']),
+  stormThreshold: z.object({
+    level: z.string(),
+    description: z.string(),
+    effects: z.array(z.string()),
+  }),
+  trend: z.enum(['increasing', 'decreasing', 'stable']),
+  recentEvents: z.array(z.object({
+    time: z.date(),
+    peakFlux: z.number(),
+    stormLevel: z.string(),
+    duration: z.number().optional(), // hours
+  })).max(5),
+  forecast: z.object({
+    probability24h: z.number().min(0).max(100),
+    expectedLevel: z.string().optional(),
+  }),
+  riskLevel: z.enum(['Minimal', 'Minor', 'Moderate', 'Strong', 'Severe', 'Extreme']),
+})
+
 // Aurora Forecast Widget Data
 export const AuroraForecastSchema = z.object({
   currentActivity: z.enum(['Quiet', 'Unsettled', 'Minor', 'Moderate', 'Strong', 'Severe', 'Extreme']),
@@ -142,6 +170,7 @@ export const WidgetDataSchema = z.object({
   kpIndex: KpIndexDataSchema.optional(),
   solarWind: SolarWindDataSchema.optional(),
   xrayFlux: XrayFluxDataSchema.optional(),
+  protonFlux: ProtonFluxDataSchema.optional(),
   auroraForecast: AuroraForecastSchema.optional(),
   satelliteEnvironment: SatelliteEnvironmentSchema.optional(),
   sparklines: z.record(SparklineDataSchema).optional(),
@@ -174,6 +203,7 @@ export type WidgetDataState = z.infer<typeof WidgetDataStateSchema>
 export type KpIndexData = z.infer<typeof KpIndexDataSchema>
 export type SolarWindData = z.infer<typeof SolarWindDataSchema>
 export type XrayFluxData = z.infer<typeof XrayFluxDataSchema>
+export type ProtonFluxData = z.infer<typeof ProtonFluxDataSchema>
 export type AuroraForecast = z.infer<typeof AuroraForecastSchema>
 export type SatelliteEnvironment = z.infer<typeof SatelliteEnvironmentSchema>
 export type SparklineData = z.infer<typeof SparklineDataSchema>
@@ -181,7 +211,7 @@ export type WidgetData = z.infer<typeof WidgetDataSchema>
 export type WidgetEvent = z.infer<typeof WidgetEventSchema>
 
 // Widget type enumeration
-export type WidgetType = 'kp-index' | 'solar-wind' | 'xray-flux' | 'aurora-forecast' | 'satellite-environment'
+export type WidgetType = 'kp-index' | 'solar-wind' | 'xray-flux' | 'proton-flux' | 'aurora-forecast' | 'satellite-environment' | 'python-analysis'
 
 // Widget registry for dynamic loading
 export interface WidgetInfo {
@@ -224,6 +254,16 @@ export const WIDGET_REGISTRY: Record<WidgetType, WidgetInfo> = {
     },
     dataSchema: XrayFluxDataSchema,
   },
+  'proton-flux': {
+    id: 'proton-flux',
+    title: 'Proton Flux Monitor',
+    description: 'Solar energetic particle flux levels with radiation storm classification',
+    icon: 'Activity',
+    defaultConfig: {
+      refreshInterval: 60000, // 1 minute
+    },
+    dataSchema: ProtonFluxDataSchema,
+  },
   'aurora-forecast': {
     id: 'aurora-forecast',
     title: 'Aurora Forecast',
@@ -243,5 +283,20 @@ export const WIDGET_REGISTRY: Record<WidgetType, WidgetInfo> = {
       refreshInterval: 120000, // 2 minutes
     },
     dataSchema: SatelliteEnvironmentSchema,
+  },
+  'python-analysis': {
+    id: 'python-analysis',
+    title: 'Python Analysis Engine',
+    description: 'Advanced solar and space weather analysis powered by Python backend',
+    icon: 'Brain',
+    defaultConfig: {
+      refreshInterval: 60000, // 1 minute
+    },
+    dataSchema: z.object({
+      solarData: z.any().optional(),
+      satelliteData: z.any().optional(),
+      forecast: z.any().optional(),
+      alerts: z.array(z.any()).optional(),
+    }),
   },
 }

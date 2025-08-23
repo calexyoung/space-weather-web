@@ -4,7 +4,8 @@ import { z } from 'zod'
 export const SourceType = z.enum([
   'NOAA_SWPC',
   'UK_MET_OFFICE',
-  'HELIO_UCLES',
+  'BOM_SWS',
+  'SIDC_BELGIUM',
   'OTHER'
 ])
 

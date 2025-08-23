@@ -9,16 +9,20 @@ import { WidgetConfig, WidgetType, WIDGET_REGISTRY } from '@/lib/widgets/widget-
 import KpIndexWidget from './kp-index-widget'
 import SolarWindWidget from './solar-wind-widget'
 import XrayFluxWidget from './xray-flux-widget'
+import ProtonFluxWidget from './proton-flux-widget'
 import AuroraForecastWidget from './aurora-forecast-widget'
 import SatelliteEnvironmentWidget from './satellite-environment-widget'
+import { PythonAnalysisWidget } from './python-analysis-widget'
 
 // Widget component mapping
 const WIDGET_COMPONENTS = {
   'kp-index': KpIndexWidget,
   'solar-wind': SolarWindWidget,
   'xray-flux': XrayFluxWidget,
+  'proton-flux': ProtonFluxWidget,
   'aurora-forecast': AuroraForecastWidget,
   'satellite-environment': SatelliteEnvironmentWidget,
+  'python-analysis': PythonAnalysisWidget,
 } as const
 
 interface WidgetManagerProps {
@@ -233,6 +237,8 @@ export {
   KpIndexWidget,
   SolarWindWidget,
   XrayFluxWidget,
+  ProtonFluxWidget,
   AuroraForecastWidget,
   SatelliteEnvironmentWidget,
+  PythonAnalysisWidget,
 }

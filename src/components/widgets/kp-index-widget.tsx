@@ -30,8 +30,9 @@ export default function KpIndexWidget({ config, onConfigChange }: KpIndexWidgetP
   const getKpLevelName = (kp: number) => {
     if (kp <= 2) return 'Quiet'
     if (kp <= 3) return 'Unsettled'
-    if (kp <= 4) return 'Minor Storm'
-    if (kp <= 6) return 'Moderate Storm'
+    if (kp <= 4) return 'Active'
+    if (kp <= 6) return 'Minor Storm'
+    if (kp <= 7) return 'Moderate Storm'    
     if (kp <= 8) return 'Strong Storm'
     return 'Extreme Storm'
   }

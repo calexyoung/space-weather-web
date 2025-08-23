@@ -285,16 +285,20 @@ export default function AuroraForecastWidget({ config, onConfigChange }: AuroraF
                     <span className="ml-1">Kp 3</span>
                   </div>
                   <div>
-                    <Badge className={getActivityColor('Minor')} variant="outline">Minor</Badge>
+                    <Badge className={getActivityColor('Active')} variant="outline">Active</Badge>
                     <span className="ml-1">Kp 4</span>
                   </div>
                   <div>
-                    <Badge className={getActivityColor('Moderate')} variant="outline">Moderate</Badge>
+                    <Badge className={getActivityColor('Minor')} variant="outline">Minor</Badge>
                     <span className="ml-1">Kp 5</span>
                   </div>
                   <div>
-                    <Badge className={getActivityColor('Strong')} variant="outline">Strong</Badge>
+                    <Badge className={getActivityColor('Moderate')} variant="outline">Moderate</Badge>
                     <span className="ml-1">Kp 6-7</span>
+                  </div>
+                  <div>
+                    <Badge className={getActivityColor('Strong')} variant="outline">Strong</Badge>
+                    <span className="ml-1">Kp 7-8</span>
                   </div>
                   <div>
                     <Badge className={getActivityColor('Severe')} variant="outline">Severe</Badge>

@@ -19,10 +19,17 @@ export async function GET() {
     
     let xrayData, eventsData
     try {
-      xrayData = await xrayResponse.json()
+      const responseText = await xrayResponse.text()
+      try {
+        xrayData = JSON.parse(responseText)
+      } catch (parseErr) {
+        console.error('Failed to parse X-ray data JSON:', parseErr)
+        console.error('Response text snippet:', responseText.substring(0, 500))
+        throw new Error('Invalid JSON response from X-ray data API')
+      }
     } catch (err) {
-      console.error('Failed to parse X-ray data:', err)
-      throw new Error('Invalid JSON response from X-ray data API')
+      console.error('Failed to fetch X-ray data:', err)
+      throw new Error('Failed to fetch X-ray data from API')
     }
     
     try {
