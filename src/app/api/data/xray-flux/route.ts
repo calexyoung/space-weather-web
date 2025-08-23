@@ -81,8 +81,8 @@ export async function GET() {
     // Process recent flares from events data
     const recentFlares = eventsData.slice(0, 10).map((flare: Record<string, unknown>) => ({
       time: new Date(String(flare.time_tag || flare.peakTime || new Date())),
-      peak: flare.classType || `C${Math.floor(Math.random() * 9 + 1)}.${Math.floor(Math.random() * 10)}`,
-      duration: flare.duration || Math.floor(Math.random() * 60) + 10,
+      peak: flare.classType || 'Unknown',
+      duration: flare.duration || null,
       location: flare.sourceLocation || 'N/A',
     })).filter((f: { time: Date }) => f.time > new Date(Date.now() - 24 * 60 * 60 * 1000))
     
