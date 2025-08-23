@@ -1,144 +1,288 @@
 import { NextResponse } from 'next/server'
 import { AuroraForecastSchema, type AuroraForecast } from '@/lib/widgets/widget-types'
 
+// Helper function to convert Kp index to activity level
+function kpToActivity(kp: number): AuroraForecast['currentActivity'] {
+  if (kp < 2) return 'Quiet'
+  if (kp < 3) return 'Unsettled'
+  if (kp < 4) return 'Minor'
+  if (kp < 5) return 'Moderate'
+  if (kp < 6) return 'Strong'
+  if (kp < 8) return 'Severe'
+  return 'Extreme'
+}
+
+// Helper function to determine visibility locations based on latitude
+function getVisibleLocations(latitude: number, hemisphere: 'northern' | 'southern'): string[] {
+  const locations: string[] = []
+  
+  if (hemisphere === 'northern') {
+    // Always visible in far north
+    if (latitude <= 70) locations.push('Tromsø', 'Fairbanks', 'Yellowknife', 'Svalbard')
+    if (latitude <= 65) locations.push('Reykjavik', 'Anchorage', 'Whitehorse')
+    if (latitude <= 60) locations.push('Oslo', 'Helsinki', 'Stockholm', 'Juneau')
+    if (latitude <= 55) locations.push('Edinburgh', 'Copenhagen', 'Moscow', 'Edmonton')
+    if (latitude <= 50) locations.push('London', 'Berlin', 'Warsaw', 'Calgary', 'Winnipeg')
+    if (latitude <= 45) locations.push('Paris', 'Seattle', 'Minneapolis', 'Montreal', 'Boston')
+    if (latitude <= 40) locations.push('New York', 'Chicago', 'Denver', 'Madrid')
+  } else {
+    // Southern hemisphere locations
+    if (latitude >= -70) locations.push('Antarctic Stations')
+    if (latitude >= -65) locations.push('South Georgia')
+    if (latitude >= -60) locations.push('Ushuaia', 'Punta Arenas')
+    if (latitude >= -55) locations.push('Invercargill', 'Hobart')
+    if (latitude >= -50) locations.push('Christchurch', 'Tasmania')
+    if (latitude >= -45) locations.push('Dunedin', 'Wellington')
+    if (latitude >= -40) locations.push('Melbourne', 'Auckland')
+  }
+  
+  return locations
+}
+
+// Calculate aurora visibility probability based on Kp and hemisphere
+function calculateVisibilityProbability(kp: number, hemisphere: 'northern' | 'southern'): number {
+  // Base probability calculation
+  let probability = 0
+  
+  if (kp >= 9) probability = 95
+  else if (kp >= 8) probability = 85
+  else if (kp >= 7) probability = 75
+  else if (kp >= 6) probability = 65
+  else if (kp >= 5) probability = 50
+  else if (kp >= 4) probability = 35
+  else if (kp >= 3) probability = 20
+  else if (kp >= 2) probability = 10
+  else probability = 5
+  
+  // Southern hemisphere typically has slightly lower visibility
+  if (hemisphere === 'southern') {
+    probability *= 0.85
+  }
+  
+  return Math.min(100, Math.max(0, probability))
+}
+
+// Calculate latitude threshold based on Kp index
+function calculateLatitudeThreshold(kp: number, hemisphere: 'northern' | 'southern'): number {
+  // Base latitude for aurora oval
+  const baseLatitude = hemisphere === 'northern' ? 67 : -67
+  
+  // Expansion based on Kp (roughly 2-3 degrees per Kp unit above 3)
+  const expansion = Math.max(0, (kp - 3) * 2.5)
+  
+  if (hemisphere === 'northern') {
+    return baseLatitude - expansion // Lower latitude means further south
+  } else {
+    return baseLatitude + expansion // Higher latitude means further north
+  }
+}
+
 export async function GET() {
   try {
-    // TODO: Replace with real aurora forecast data from NOAA/SWPC
-    // For now, return mock data that simulates realistic aurora conditions
+    // Fetch real aurora data from NOAA SWPC
+    const [ovationResponse, kpResponse, kpForecastResponse] = await Promise.all([
+      fetch('https://services.swpc.noaa.gov/json/ovation_aurora_latest.json', {
+        signal: AbortSignal.timeout(10000)
+      }).catch(() => null),
+      fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', {
+        signal: AbortSignal.timeout(10000)
+      }).catch(() => null),
+      fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json', {
+        signal: AbortSignal.timeout(10000)
+      }).catch(() => null)
+    ])
     
-    const currentActivity = ['Quiet', 'Unsettled', 'Minor', 'Moderate', 'Strong'][Math.floor(Math.random() * 5)]
+    // Parse responses
+    const ovationData = ovationResponse ? await ovationResponse.json().catch(() => null) : null
+    const kpData = kpResponse ? await kpResponse.json().catch(() => []) : []
+    const kpForecastData = kpForecastResponse ? await kpForecastResponse.json().catch(() => []) : []
     
-    // Base visibility probabilities on activity level
-    const activityMultiplier = {
-      'Quiet': 0.1,
-      'Unsettled': 0.3,
-      'Minor': 0.5,
-      'Moderate': 0.7,
-      'Strong': 0.9,
-    }[currentActivity] || 0.1
-    
-    const northernProb = Math.min(100, Math.random() * 100 * activityMultiplier + 5)
-    const southernProb = Math.min(100, Math.random() * 100 * activityMultiplier * 0.8 + 5) // Southern typically slightly lower
-    
-    // Generate latitude thresholds based on activity
-    const baseNorthLat = 65 // Normal aurora oval
-    const baseSouthLat = -65
-    const latitudeExpansion = activityMultiplier * 15 // Up to 15 degrees expansion during strong activity
-    
-    const northernLatitude = baseNorthLat - latitudeExpansion
-    const southernLatitude = baseSouthLat + latitudeExpansion
-    
-    // Generate visible locations based on latitude thresholds
-    const northernLocations = []
-    const southernLocations = []
-    
-    if (northernLatitude <= 60) northernLocations.push('Anchorage', 'Fairbanks', 'Yellowknife', 'Tromsø')
-    if (northernLatitude <= 55) northernLocations.push('Edmonton', 'Whitehorse', 'Reykjavik')
-    if (northernLatitude <= 50) northernLocations.push('Calgary', 'Minneapolis', 'Stockholm')
-    if (northernLatitude <= 45) northernLocations.push('Seattle', 'Chicago', 'Boston', 'London')
-    
-    if (southernLatitude >= -60) southernLocations.push('Ushuaia', 'Hobart', 'Invercargill')
-    if (southernLatitude >= -55) southernLocations.push('Punta Arenas', 'Christchurch')
-    if (southernLatitude >= -50) southernLocations.push('Melbourne', 'Auckland')
-    
-    // Generate 24-hour forecast
-    const forecast24h = Array.from({ length: 24 }, (_, i) => {
-      const time = new Date(Date.now() + i * 60 * 60 * 1000)
-      const hourlyActivity = ['Quiet', 'Unsettled', 'Minor', 'Moderate', 'Strong'][Math.floor(Math.random() * 5)]
-      const hourlyMultiplier = activityMultiplier * (0.5 + Math.random() * 1.0) // Vary around base activity
-      
-      return {
-        time,
-        activity: hourlyActivity,
-        visibility: {
-          northern: Math.min(100, Math.max(0, northernProb * hourlyMultiplier)),
-          southern: Math.min(100, Math.max(0, southernProb * hourlyMultiplier)),
-        },
+    // Get current Kp value
+    let currentKp = 2.0 // Default to quiet conditions
+    if (kpData && kpData.length > 1) {
+      const validKp = kpData.slice(1).filter((row: unknown[]) => 
+        row && row.length >= 2 && row[1] !== null && row[1] !== ''
+      )
+      if (validKp.length > 0) {
+        currentKp = parseFloat(validKp[validKp.length - 1][1]) || 2.0
       }
-    })
+    }
     
-    // Find peak time (highest combined visibility)
-    const peakForecast = forecast24h.reduce((prev, current) => 
-      (prev.visibility.northern + prev.visibility.southern) > 
-      (current.visibility.northern + current.visibility.southern) ? prev : current
-    )
+    // Process OVATION data for aurora visibility
+    let northernProbability = calculateVisibilityProbability(currentKp, 'northern')
+    let southernProbability = calculateVisibilityProbability(currentKp, 'southern')
+    const northernLatitude = calculateLatitudeThreshold(currentKp, 'northern')
+    const southernLatitude = calculateLatitudeThreshold(currentKp, 'southern')
     
-    const mockData: AuroraForecast = {
-      currentActivity: currentActivity as 'Quiet' | 'Unsettled' | 'Minor' | 'Moderate' | 'Strong',
+    // If we have OVATION data, use it to refine our estimates
+    if (ovationData && ovationData.coordinates) {
+      // OVATION provides aurora power data on a grid
+      // We can use this to get more accurate visibility estimates
+      try {
+        const coords = ovationData.coordinates
+        let maxNorthPower = 0
+        let maxSouthPower = 0
+        
+        // Find maximum aurora power in each hemisphere
+        for (let i = 0; i < coords.length; i++) {
+          const lat = coords[i][1]
+          const power = coords[i][2] || 0
+          
+          if (lat > 0 && power > maxNorthPower) {
+            maxNorthPower = power
+          } else if (lat < 0 && power > maxSouthPower) {
+            maxSouthPower = power
+          }
+        }
+        
+        // Adjust probabilities based on actual aurora power
+        if (maxNorthPower > 0) {
+          northernProbability = Math.min(100, northernProbability * (1 + maxNorthPower / 100))
+        }
+        if (maxSouthPower > 0) {
+          southernProbability = Math.min(100, southernProbability * (1 + maxSouthPower / 100))
+        }
+      } catch (e) {
+        console.warn('Failed to process OVATION data:', e)
+      }
+    }
+    
+    // Generate 24-hour forecast based on Kp predictions
+    const forecast24h: Array<{
+      time: Date
+      activity: string
+      visibility: {
+        northern: number
+        southern: number
+      }
+    }> = []
+    
+    let peakKp = currentKp
+    let peakTime = new Date()
+    
+    if (kpForecastData && kpForecastData.length > 1) {
+      // Process forecast data (skip header row)
+      const forecasts = kpForecastData.slice(1).filter((row: unknown[]) =>
+        row && row.length >= 2 && row[0] && row[1] !== null
+      )
+      
+      // Generate hourly forecast for next 24 hours
+      for (let hour = 0; hour < 24; hour++) {
+        const forecastTime = new Date(Date.now() + hour * 60 * 60 * 1000)
+        
+        // Find nearest forecast value (forecasts are typically 3-hour intervals)
+        const forecastIndex = Math.floor(hour / 3)
+        let forecastKp = currentKp
+        
+        if (forecastIndex < forecasts.length) {
+          forecastKp = parseFloat(forecasts[forecastIndex][1]) || currentKp
+        }
+        
+        // Track peak activity
+        if (forecastKp > peakKp) {
+          peakKp = forecastKp
+          peakTime = forecastTime
+        }
+        
+        forecast24h.push({
+          time: forecastTime,
+          activity: kpToActivity(forecastKp),
+          visibility: {
+            northern: calculateVisibilityProbability(forecastKp, 'northern'),
+            southern: calculateVisibilityProbability(forecastKp, 'southern')
+          }
+        })
+      }
+    } else {
+      // No forecast available, use current conditions
+      for (let hour = 0; hour < 24; hour++) {
+        forecast24h.push({
+          time: new Date(Date.now() + hour * 60 * 60 * 1000),
+          activity: kpToActivity(currentKp),
+          visibility: {
+            northern: northernProbability,
+            southern: southernProbability
+          }
+        })
+      }
+    }
+    
+    // Determine confidence level based on data availability
+    let confidence: 'Low' | 'Medium' | 'High' = 'Medium'
+    if (ovationData && kpForecastData && kpForecastData.length > 1) {
+      confidence = 'High'
+    } else if (!ovationData && !kpForecastData) {
+      confidence = 'Low'
+    }
+    
+    const auroraForecast: AuroraForecast = {
+      currentActivity: kpToActivity(currentKp),
       visibility: {
         northern: {
-          latitudeThreshold: Math.round(northernLatitude * 10) / 10, // Round to 1 decimal place
-          probability: Math.round(northernProb * 10) / 10, // Round to 1 decimal place
-          locations: northernLocations,
+          latitudeThreshold: Math.round(northernLatitude * 10) / 10,
+          probability: Math.round(northernProbability * 10) / 10,
+          locations: getVisibleLocations(northernLatitude, 'northern')
         },
         southern: {
-          latitudeThreshold: Math.round(southernLatitude * 10) / 10, // Round to 1 decimal place
-          probability: Math.round(southernProb * 10) / 10, // Round to 1 decimal place
-          locations: southernLocations,
-        },
+          latitudeThreshold: Math.round(southernLatitude * 10) / 10,
+          probability: Math.round(southernProbability * 10) / 10,
+          locations: getVisibleLocations(southernLatitude, 'southern')
+        }
       },
       forecast24h: forecast24h.map(f => ({
         ...f,
         visibility: {
-          northern: Math.round(f.visibility.northern * 10) / 10, // Round to 1 decimal place
-          southern: Math.round(f.visibility.southern * 10) / 10, // Round to 1 decimal place
+          northern: Math.round(f.visibility.northern * 10) / 10,
+          southern: Math.round(f.visibility.southern * 10) / 10
         }
       })),
-      peakTime: peakForecast.time,
-      confidence: ['Low', 'Medium', 'High'][Math.floor(Math.random() * 3)] as 'Low' | 'Medium' | 'High',
+      peakTime: peakKp > currentKp ? peakTime : undefined,
+      confidence
     }
-
+    
     // Validate the data structure
-    const validatedData = AuroraForecastSchema.parse(mockData)
-
+    const validatedData = AuroraForecastSchema.parse(auroraForecast)
+    
     return NextResponse.json(validatedData, {
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-      },
+        'Cache-Control': 'public, max-age=300' // Cache for 5 minutes
+      }
     })
   } catch (error) {
     console.error('Error fetching aurora forecast data:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch aurora forecast data' },
-      { status: 500 }
-    )
-  }
-}
-
-// Real implementation would look like this:
-/*
-async function fetchRealAuroraData(): Promise<AuroraForecast> {
-  try {
-    // Fetch from NOAA SWPC aurora forecast
-    const response = await fetch('https://services.swpc.noaa.gov/json/ovation_aurora_latest.json')
-    const data = await response.json()
     
-    // Fetch Kp forecast for activity level
-    const kpResponse = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json')
-    const kpData = await kpResponse.json()
-    
-    // Calculate visibility based on current Kp and forecast
-    const currentKp = parseFloat(kpData[kpData.length - 1][1])
-    
-    return {
-      currentActivity: kpToActivity(currentKp),
-      visibility: calculateVisibility(data, currentKp),
-      forecast24h: generateForecast(kpData),
-      peakTime: findPeakTime(kpData),
-      confidence: assessConfidence(kpData),
+    // Return safe fallback data
+    const fallbackData: AuroraForecast = {
+      currentActivity: 'Quiet',
+      visibility: {
+        northern: {
+          latitudeThreshold: 67.0,
+          probability: 5.0,
+          locations: []
+        },
+        southern: {
+          latitudeThreshold: -67.0,
+          probability: 5.0,
+          locations: []
+        }
+      },
+      forecast24h: Array.from({ length: 24 }, (_, i) => ({
+        time: new Date(Date.now() + i * 60 * 60 * 1000),
+        activity: 'Quiet',
+        visibility: {
+          northern: 5.0,
+          southern: 5.0
+        }
+      })),
+      confidence: 'Low'
     }
-  } catch (error) {
-    throw new Error('Failed to fetch real aurora data')
+    
+    return NextResponse.json(fallbackData, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+      }
+    })
   }
 }
-
-function kpToActivity(kp: number): string {
-  if (kp <= 2) return 'Quiet'
-  if (kp <= 3) return 'Unsettled'  
-  if (kp <= 4) return 'Minor'
-  if (kp <= 6) return 'Moderate'
-  if (kp <= 8) return 'Strong'
-  return 'Extreme'
-}
-*/
