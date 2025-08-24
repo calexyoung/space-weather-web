@@ -28,7 +28,7 @@ interface SolarFlare {
   potentialImpact: string
   linkedEvents?: Array<{ activityID: string }>
   instruments?: Array<{ displayName: string }>
-  source?: 'DONKI' | 'HEK'
+  source?: 'DONKI' | 'NOAA'
   observatory?: string
   instrument?: string
 }
@@ -176,13 +176,13 @@ export default function SolarFlareTable({ dateRange }: SolarFlareTableProps) {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Solar Flares (DONKI + HEK)</CardTitle>
+            <CardTitle>Solar Flares (DONKI + NOAA)</CardTitle>
             <CardDescription>
               {flares.length} flares detected in the last {dateRange}
               {flares.length > 0 && (
                 <span className="ml-2">
                   (DONKI: {flares.filter(f => f.source === 'DONKI').length}, 
-                   HEK: {flares.filter(f => f.source === 'HEK').length})
+                   NOAA: {flares.filter(f => f.source === 'NOAA').length})
                 </span>
               )}
             </CardDescription>

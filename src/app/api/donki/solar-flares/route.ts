@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { fetchHEKFlares, normalizeHEKFlare, mergeFlareData } from '@/lib/sources/hek-client'
 
 const DONKI_API_KEY = process.env.NASA_API_KEY?.replace(/"/g, '') || 'DEMO_KEY'
 const DONKI_BASE_URL = 'https://api.nasa.gov/DONKI'
+const NOAA_XRAY_URL = 'https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json'
+const NOAA_REGIONS_URL = 'https://services.swpc.noaa.gov/json/solar_regions.json'
 
 // Cache for storing API responses
 const cache = new Map<string, { data: any, timestamp: number }>()
@@ -60,77 +61,215 @@ export async function GET(request: NextRequest) {
     const startDateStr = startDate.toISOString().split('T')[0]
     const endDateStr = endDate.toISOString().split('T')[0]
     
-    // Fetch FLR (Solar Flare) events from DONKI
-    const url = `${DONKI_BASE_URL}/FLR?startDate=${startDateStr}&endDate=${endDateStr}&api_key=${DONKI_API_KEY}`
+    // Try to fetch from DONKI first
+    let donkiFlares: any[] = []
+    let donkiError = null
     
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-      },
-      next: { revalidate: 300 } // Cache for 5 minutes
-    })
-    
-    if (!response.ok) {
-      // If rate limited or error, return sample data
-      if (response.status === 429 || response.status === 403) {
-        console.warn('NASA DONKI API rate limited, returning sample data')
-        return NextResponse.json(getSampleFlareData(dateRange))
-      }
-      throw new Error(`DONKI API error: ${response.status}`)
-    }
-    
-    const donkiData: SolarFlare[] = await response.json()
-    
-    // Format DONKI flares
-    const formattedDonkiFlares = donkiData.map(flare => ({
-      id: flare.flrID,
-      classType: flare.classType,
-      beginTime: flare.beginTime,
-      peakTime: flare.peakTime,
-      endTime: flare.endTime,
-      duration: flare.endTime && flare.beginTime ? 
-        (new Date(flare.endTime).getTime() - new Date(flare.beginTime).getTime()) / (1000 * 60) : null, // duration in minutes
-      sourceLocation: flare.sourceLocation || 'N/A',
-      activeRegionNum: flare.activeRegionNum,
-      linkedEvents: flare.linkedEvents || [],
-      instruments: flare.instruments || [],
-      // Determine flare intensity
-      intensity: getFlareIntensity(flare.classType),
-      // Add impact assessment
-      potentialImpact: assessFlareImpact(flare.classType)
-    }))
-    
-    // Fetch HEK flares for the same time period
-    let hekFlares: any[] = []
     try {
-      const hekEvents = await fetchHEKFlares({
-        startDate: startDate,
-        endDate: endDate,
-        eventType: 'FL',
-        pageSize: 200
+      const donkiUrl = `${DONKI_BASE_URL}/FLR?startDate=${startDateStr}&endDate=${endDateStr}&api_key=${DONKI_API_KEY}`
+      const donkiResponse = await fetch(donkiUrl, {
+        headers: {
+          'Accept': 'application/json',
+        },
+        next: { revalidate: 300 } // Cache for 5 minutes
       })
       
-      // Normalize HEK flares to match our format
-      hekFlares = hekEvents.map(normalizeHEKFlare)
-    } catch (hekError) {
-      console.warn('Failed to fetch HEK flares, continuing with DONKI data only:', hekError)
+      if (donkiResponse.ok) {
+        const donkiData: SolarFlare[] = await donkiResponse.json()
+        donkiFlares = donkiData.map(flare => ({
+          id: flare.flrID,
+          classType: flare.classType,
+          beginTime: flare.beginTime,
+          peakTime: flare.peakTime,
+          endTime: flare.endTime,
+          duration: flare.endTime && flare.beginTime ? 
+            (new Date(flare.endTime).getTime() - new Date(flare.beginTime).getTime()) / (1000 * 60) : null,
+          sourceLocation: flare.sourceLocation || 'N/A',
+          activeRegionNum: flare.activeRegionNum,
+          linkedEvents: flare.linkedEvents || [],
+          instruments: flare.instruments || [],
+          intensity: getFlareIntensity(flare.classType),
+          potentialImpact: assessFlareImpact(flare.classType),
+          source: 'DONKI'
+        }))
+      } else {
+        donkiError = `DONKI API error: ${donkiResponse.status}`
+      }
+    } catch (err) {
+      donkiError = err instanceof Error ? err.message : 'Failed to fetch DONKI data'
+      console.warn('DONKI API error:', donkiError)
     }
     
-    // Merge DONKI and HEK flares, removing duplicates
-    const mergedFlares = mergeFlareData(formattedDonkiFlares, hekFlares)
+    // Fetch solar regions data for correlation
+    let solarRegions: any[] = []
+    try {
+      const regionsResponse = await fetch(NOAA_REGIONS_URL, {
+        headers: {
+          'Accept': 'application/json',
+        },
+        next: { revalidate: 300 } // Cache for 5 minutes
+      })
+      
+      if (regionsResponse.ok) {
+        solarRegions = await regionsResponse.json()
+      }
+    } catch (err) {
+      console.warn('Failed to fetch solar regions:', err)
+    }
+    
+    // Helper function to find most likely region for a flare
+    const findFlareRegion = (flareClass: string) => {
+      if (!solarRegions.length || !flareClass) return { region: null, location: 'N/A' }
+      
+      const flareType = flareClass[0].toUpperCase()
+      
+      // Get the most recent observation date
+      const latestDate = solarRegions.reduce((latest, r) => {
+        const date = new Date(r.observed_date)
+        return date > latest ? date : latest
+      }, new Date(0))
+      
+      // Filter for most recent active regions only
+      const activeRegions = solarRegions.filter(r => {
+        const obsDate = new Date(r.observed_date)
+        const isRecent = obsDate.getTime() === latestDate.getTime()
+        return isRecent && r.region && r.status && r.status !== 'd' // Not departed
+      })
+      
+      if (!activeRegions.length) return { region: null, location: 'N/A' }
+      
+      // Find regions that have produced similar flares
+      let candidates = []
+      
+      if (flareType === 'X') {
+        candidates = activeRegions.filter(r => r.x_xray_events > 0)
+        if (!candidates.length) {
+          candidates = activeRegions.filter(r => r.x_flare_probability >= 10)
+        }
+      } else if (flareType === 'M') {
+        candidates = activeRegions.filter(r => r.m_xray_events > 0)
+        if (!candidates.length) {
+          candidates = activeRegions.filter(r => r.m_flare_probability >= 20)
+        }
+      } else if (flareType === 'C') {
+        candidates = activeRegions.filter(r => r.c_xray_events > 0)
+        if (!candidates.length) {
+          candidates = activeRegions.filter(r => r.c_flare_probability >= 30)
+        }
+      }
+      
+      // If no candidates, use the most active region
+      if (!candidates.length) {
+        candidates = activeRegions
+      }
+      
+      // Pick the best candidate based on activity
+      if (candidates.length) {
+        const bestRegion = candidates.reduce((best, current) => {
+          const bestScore = (best.x_xray_events || 0) * 100 + 
+                           (best.m_xray_events || 0) * 10 + 
+                           (best.c_xray_events || 0) +
+                           (best.area || 0) * 0.1
+          const currentScore = (current.x_xray_events || 0) * 100 + 
+                              (current.m_xray_events || 0) * 10 + 
+                              (current.c_xray_events || 0) +
+                              (current.area || 0) * 0.1
+          return currentScore > bestScore ? current : best
+        })
+        
+        return {
+          region: bestRegion.region,
+          location: bestRegion.location || 'N/A'
+        }
+      }
+      
+      return { region: null, location: 'N/A' }
+    }
+    
+    // Fetch from NOAA GOES X-ray flares as primary/backup source
+    let noaaFlares: any[] = []
+    try {
+      const noaaResponse = await fetch(NOAA_XRAY_URL, {
+        headers: {
+          'Accept': 'application/json',
+        },
+        next: { revalidate: 60 } // Cache for 1 minute
+      })
+      
+      if (noaaResponse.ok) {
+        const noaaData = await noaaResponse.json()
+        
+        // Filter NOAA data by date range
+        const cutoffDate = new Date(startDate)
+        noaaFlares = noaaData
+          .filter((flare: any) => {
+            const flareDate = new Date(flare.begin_time)
+            return flareDate >= cutoffDate && flareDate <= endDate
+          })
+          .map((flare: any) => {
+            // Try to correlate with solar regions
+            const regionInfo = findFlareRegion(flare.max_class)
+            
+            return {
+              id: `NOAA_${flare.time_tag}`,
+              classType: flare.max_class,
+              beginTime: flare.begin_time,
+              peakTime: flare.max_time,
+              endTime: flare.end_time,
+              duration: flare.begin_time && flare.end_time ? 
+                (new Date(flare.end_time).getTime() - new Date(flare.begin_time).getTime()) / (1000 * 60) : null,
+              sourceLocation: regionInfo.location,
+              activeRegionNum: regionInfo.region,
+              linkedEvents: [],
+              instruments: [{ displayName: `GOES-${flare.satellite || '16'}` }],
+              intensity: getFlareIntensity(flare.max_class),
+              potentialImpact: assessFlareImpact(flare.max_class),
+              source: 'NOAA',
+              maxXrayLong: flare.max_xrlong
+            }
+          })
+      }
+    } catch (noaaError) {
+      console.warn('Failed to fetch NOAA flares:', noaaError)
+    }
+    
+    // Combine and deduplicate flares
+    const allFlares = [...donkiFlares]
+    
+    // Add NOAA flares that aren't already in DONKI data
+    for (const noaaFlare of noaaFlares) {
+      const isDuplicate = donkiFlares.some(donkiFlare => {
+        const timeDiff = Math.abs(
+          new Date(donkiFlare.peakTime || donkiFlare.beginTime).getTime() - 
+          new Date(noaaFlare.peakTime || noaaFlare.beginTime).getTime()
+        )
+        // Consider flares within 5 minutes and same class as duplicates
+        return timeDiff < 5 * 60 * 1000 && 
+               donkiFlare.classType?.charAt(0) === noaaFlare.classType?.charAt(0)
+      })
+      
+      if (!isDuplicate) {
+        allFlares.push(noaaFlare)
+      }
+    }
+    
+    // Sort by begin time (most recent first)
+    const sortedFlares = allFlares.sort((a, b) => 
+      new Date(b.beginTime).getTime() - new Date(a.beginTime).getTime()
+    )
     
     const responseData = {
       success: true,
-      data: mergedFlares,
-      count: mergedFlares.length,
+      data: sortedFlares,
+      count: sortedFlares.length,
       dateRange: {
         start: startDateStr,
         end: endDateStr
       },
       sources: {
-        donki: formattedDonkiFlares.length,
-        hek: hekFlares.length,
-        total: mergedFlares.length
+        donki: donkiFlares.length,
+        noaa: noaaFlares.length,
+        total: sortedFlares.length
       }
     }
     
@@ -213,21 +352,21 @@ function getSampleFlareData(dateRange: string) {
     
     const classes = ['X1.2', 'M5.4', 'M2.1', 'C8.9', 'C5.3', 'C2.1', 'B9.8']
     const classType = classes[Math.floor(Math.random() * classes.length)]
-    const source = Math.random() > 0.5 ? 'DONKI' : 'HEK'
+    const source = Math.random() > 0.5 ? 'DONKI' : 'NOAA'
     
     sampleFlares.push({
-      id: source === 'DONKI' ? `FL${beginTime.getTime()}` : `HEK_${beginTime.getTime()}`,
+      id: source === 'DONKI' ? `FL${beginTime.getTime()}` : `NOAA_${beginTime.getTime()}`,
       classType,
       beginTime: beginTime.toISOString(),
       peakTime: peakTime.toISOString(),
       endTime: endTime.toISOString(),
       duration: (endTime.getTime() - beginTime.getTime()) / (1000 * 60),
-      sourceLocation: `N${Math.floor(Math.random() * 30)}${Math.random() > 0.5 ? 'E' : 'W'}${Math.floor(Math.random() * 90)}`,
-      activeRegionNum: Math.random() > 0.3 ? 13500 + Math.floor(Math.random() * 100) : null,
+      sourceLocation: source === 'DONKI' ? `N${Math.floor(Math.random() * 30)}${Math.random() > 0.5 ? 'E' : 'W'}${Math.floor(Math.random() * 90)}` : 'N/A',
+      activeRegionNum: source === 'DONKI' && Math.random() > 0.3 ? 13500 + Math.floor(Math.random() * 100) : null,
       intensity: getFlareIntensity(classType),
       potentialImpact: assessFlareImpact(classType),
       linkedEvents: [],
-      instruments: source === 'DONKI' ? [{ displayName: 'GOES-16' }] : [],
+      instruments: [{ displayName: 'GOES-16' }],
       source: source
     })
   }
@@ -238,7 +377,7 @@ function getSampleFlareData(dateRange: string) {
   )
   
   const donkiCount = sampleFlares.filter(f => f.source === 'DONKI').length
-  const hekCount = sampleFlares.filter(f => f.source === 'HEK').length
+  const noaaCount = sampleFlares.filter(f => f.source === 'NOAA').length
   
   return {
     success: true,
@@ -250,7 +389,7 @@ function getSampleFlareData(dateRange: string) {
     },
     sources: {
       donki: donkiCount,
-      hek: hekCount,
+      noaa: noaaCount,
       total: sampleFlares.length
     },
     note: 'Sample data - NASA DONKI API temporarily unavailable'
