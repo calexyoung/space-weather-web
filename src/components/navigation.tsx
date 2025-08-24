@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, Calendar, Satellite, Globe } from 'lucide-react';
+import { Activity, Calendar, Satellite, Globe, Gauge } from 'lucide-react';
 
 const Navigation = () => {
   const pathname = usePathname();
@@ -22,6 +22,11 @@ const Navigation = () => {
       href: '/events',
       label: 'Events',
       icon: Calendar,
+    },
+    {
+      href: '/widgets',
+      label: 'Widgets',
+      icon: Gauge,
     },
   ];
 
