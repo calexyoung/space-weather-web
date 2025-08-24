@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 const DONKI_API_KEY = process.env.NASA_API_KEY?.replace(/"/g, '') || 'DEMO_KEY'
 const DONKI_BASE_URL = 'https://api.nasa.gov/DONKI'
 const NOAA_XRAY_URL = 'https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json'
+const NOAA_REGIONS_URL = 'https://services.swpc.noaa.gov/json/solar_regions.json'
 
 // Cache for storing API responses
 const cache = new Map<string, { data: any, timestamp: number }>()
@@ -99,6 +100,92 @@ export async function GET(request: NextRequest) {
       console.warn('DONKI API error:', donkiError)
     }
     
+    // Fetch solar regions data for correlation
+    let solarRegions: any[] = []
+    try {
+      const regionsResponse = await fetch(NOAA_REGIONS_URL, {
+        headers: {
+          'Accept': 'application/json',
+        },
+        next: { revalidate: 300 } // Cache for 5 minutes
+      })
+      
+      if (regionsResponse.ok) {
+        solarRegions = await regionsResponse.json()
+      }
+    } catch (err) {
+      console.warn('Failed to fetch solar regions:', err)
+    }
+    
+    // Helper function to find most likely region for a flare
+    const findFlareRegion = (flareClass: string) => {
+      if (!solarRegions.length || !flareClass) return { region: null, location: 'N/A' }
+      
+      const flareType = flareClass[0].toUpperCase()
+      
+      // Get the most recent observation date
+      const latestDate = solarRegions.reduce((latest, r) => {
+        const date = new Date(r.observed_date)
+        return date > latest ? date : latest
+      }, new Date(0))
+      
+      // Filter for most recent active regions only
+      const activeRegions = solarRegions.filter(r => {
+        const obsDate = new Date(r.observed_date)
+        const isRecent = obsDate.getTime() === latestDate.getTime()
+        return isRecent && r.region && r.status && r.status !== 'd' // Not departed
+      })
+      
+      if (!activeRegions.length) return { region: null, location: 'N/A' }
+      
+      // Find regions that have produced similar flares
+      let candidates = []
+      
+      if (flareType === 'X') {
+        candidates = activeRegions.filter(r => r.x_xray_events > 0)
+        if (!candidates.length) {
+          candidates = activeRegions.filter(r => r.x_flare_probability >= 10)
+        }
+      } else if (flareType === 'M') {
+        candidates = activeRegions.filter(r => r.m_xray_events > 0)
+        if (!candidates.length) {
+          candidates = activeRegions.filter(r => r.m_flare_probability >= 20)
+        }
+      } else if (flareType === 'C') {
+        candidates = activeRegions.filter(r => r.c_xray_events > 0)
+        if (!candidates.length) {
+          candidates = activeRegions.filter(r => r.c_flare_probability >= 30)
+        }
+      }
+      
+      // If no candidates, use the most active region
+      if (!candidates.length) {
+        candidates = activeRegions
+      }
+      
+      // Pick the best candidate based on activity
+      if (candidates.length) {
+        const bestRegion = candidates.reduce((best, current) => {
+          const bestScore = (best.x_xray_events || 0) * 100 + 
+                           (best.m_xray_events || 0) * 10 + 
+                           (best.c_xray_events || 0) +
+                           (best.area || 0) * 0.1
+          const currentScore = (current.x_xray_events || 0) * 100 + 
+                              (current.m_xray_events || 0) * 10 + 
+                              (current.c_xray_events || 0) +
+                              (current.area || 0) * 0.1
+          return currentScore > bestScore ? current : best
+        })
+        
+        return {
+          region: bestRegion.region,
+          location: bestRegion.location || 'N/A'
+        }
+      }
+      
+      return { region: null, location: 'N/A' }
+    }
+    
     // Fetch from NOAA GOES X-ray flares as primary/backup source
     let noaaFlares: any[] = []
     try {
@@ -119,23 +206,28 @@ export async function GET(request: NextRequest) {
             const flareDate = new Date(flare.begin_time)
             return flareDate >= cutoffDate && flareDate <= endDate
           })
-          .map((flare: any) => ({
-            id: `NOAA_${flare.time_tag}`,
-            classType: flare.max_class,
-            beginTime: flare.begin_time,
-            peakTime: flare.max_time,
-            endTime: flare.end_time,
-            duration: flare.begin_time && flare.end_time ? 
-              (new Date(flare.end_time).getTime() - new Date(flare.begin_time).getTime()) / (1000 * 60) : null,
-            sourceLocation: 'N/A', // NOAA doesn't provide location
-            activeRegionNum: null,
-            linkedEvents: [],
-            instruments: [{ displayName: `GOES-${flare.satellite || '16'}` }],
-            intensity: getFlareIntensity(flare.max_class),
-            potentialImpact: assessFlareImpact(flare.max_class),
-            source: 'NOAA',
-            maxXrayLong: flare.max_xrlong
-          }))
+          .map((flare: any) => {
+            // Try to correlate with solar regions
+            const regionInfo = findFlareRegion(flare.max_class)
+            
+            return {
+              id: `NOAA_${flare.time_tag}`,
+              classType: flare.max_class,
+              beginTime: flare.begin_time,
+              peakTime: flare.max_time,
+              endTime: flare.end_time,
+              duration: flare.begin_time && flare.end_time ? 
+                (new Date(flare.end_time).getTime() - new Date(flare.begin_time).getTime()) / (1000 * 60) : null,
+              sourceLocation: regionInfo.location,
+              activeRegionNum: regionInfo.region,
+              linkedEvents: [],
+              instruments: [{ displayName: `GOES-${flare.satellite || '16'}` }],
+              intensity: getFlareIntensity(flare.max_class),
+              potentialImpact: assessFlareImpact(flare.max_class),
+              source: 'NOAA',
+              maxXrayLong: flare.max_xrlong
+            }
+          })
       }
     } catch (noaaError) {
       console.warn('Failed to fetch NOAA flares:', noaaError)
