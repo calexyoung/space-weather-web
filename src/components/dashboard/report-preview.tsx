@@ -20,6 +20,7 @@ import {
   AlertCircle
 } from 'lucide-react'
 import { SpaceWeatherReport } from '@/lib/types/space-weather'
+import { markdownToSafeHTML, sanitizeHTML } from '@/lib/security/sanitizer'
 
 interface ReportPreviewProps {
   report?: SpaceWeatherReport | null
@@ -69,15 +70,8 @@ export default function ReportPreview({
   }
 
   const renderMarkdownAsHTML = (markdown: string) => {
-    // Simple markdown to HTML conversion for preview
-    return markdown
-      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-      .replace(/^\* (.*$)/gim, '<li>$1</li>')
-      .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/gim, '<em>$1</em>')
-      .replace(/\n/gim, '<br>')
+    // Use secure markdown to HTML conversion with sanitization
+    return markdownToSafeHTML(markdown)
   }
 
   if (isGenerating) {

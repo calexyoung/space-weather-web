@@ -78,7 +78,7 @@ function assessRegionThreat(region: any): string {
   return 'None'
 }
 
-function calculateFlareProb abilities(regions: any[]): { mClass: number, xClass: number } {
+function calculateFlareProbabilities(regions: any[]): { mClass: number, xClass: number } {
   let mClassProb = 0
   let xClassProb = 0
   
@@ -111,13 +111,14 @@ function calculateFlareProb abilities(regions: any[]): { mClass: number, xClass:
 }
 
 function determineRegionHistory(region: any): string {
-  // In a real implementation, this would compare with historical data
-  // For now, use area and complexity as proxies
+  // Use the status field from NOAA data when available
+  const status = region.status || ''
   const area = region.area || 0
   
-  if (region.Region === undefined) return 'New'
-  if (area > 400) return 'Growing'
-  if (area < 100) return 'Decaying'
+  // NOAA status codes: n=new, l=growing, s=stable, d=decaying, f=fading
+  if (status === 'n') return 'New'
+  if (status === 'l' || area > 400) return 'Growing'
+  if (status === 'd' || status === 'f' || area < 100) return 'Decaying'
   return 'Stable'
 }
 
@@ -152,28 +153,52 @@ export async function GET() {
       }
     }
     
-    // Process regions
-    const activeRegions = regionsData.map(region => {
-      const lat = region.Latitude || 0
-      const lon = region.Longitude || 0
-      const area = region.Area || 0
-      const spotClass = region.Spot_Class || 'Unknown'
-      const magneticClass = region.Mag_Type || 'Unknown'
-      const numSunspots = region.Number_Spots || 0
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().split('T')[0]
+    
+    // Process regions - filter for today's date and valid regions with area, spot_class, and mag_class
+    // These are the visible spots for the current date
+    const validRegions = regionsData.filter(region => 
+      region.observed_date && 
+      region.observed_date.startsWith(today) &&
+      region.area !== null && 
+      region.area !== undefined &&
+      region.spot_class !== null && 
+      region.spot_class !== undefined &&
+      region.mag_class !== null &&
+      region.mag_class !== undefined
+    )
+    
+    // Get the latest observation for each unique region number
+    const latestRegions = new Map<number, any>()
+    validRegions.forEach(region => {
+      const regionNum = region.region
+      if (!latestRegions.has(regionNum) || 
+          new Date(region.observed_date) > new Date(latestRegions.get(regionNum).observed_date)) {
+        latestRegions.set(regionNum, region)
+      }
+    })
+    
+    const activeRegions = Array.from(latestRegions.values()).map(region => {
+      const lat = region.latitude || 0
+      const lon = region.longitude || 0
+      const area = region.area || 0
+      const spotClass = region.spot_class || 'Unknown'
+      const magneticClass = region.mag_class || 'Unknown'
+      const numSunspots = region.number_spots || 0
       
       // Determine if earth-facing (within ±60 degrees of center)
       const isEarthFacing = Math.abs(lon) <= 60
       
-      // Calculate flare activity (would need historical data in production)
-      // For now, estimate based on magnetic complexity
+      // Use actual flare counts from NOAA data
+      const cFlares = region.c_xray_events || 0
+      const mFlares = region.m_xray_events || 0
+      const xFlares = region.x_xray_events || 0
       const complexity = assessMagneticComplexity(magneticClass)
-      const cFlares = Math.max(0, Math.floor(Math.random() * 3 * (complexity > 2 ? 1 : 0)))
-      const mFlares = Math.max(0, Math.floor(Math.random() * 2 * (complexity > 4 ? 1 : 0)))
-      const xFlares = Math.max(0, Math.floor(Math.random() * 1 * (complexity > 7 ? 1 : 0)))
       
       return {
-        number: region.Region || 0,
-        location: `${lat >= 0 ? 'N' : 'S'}${Math.abs(Math.round(lat))}${lon >= 0 ? 'E' : 'W'}${Math.abs(Math.round(lon))}`,
+        number: region.region || 0,
+        location: region.location || `${lat >= 0 ? 'N' : 'S'}${Math.abs(Math.round(lat))}${lon >= 0 ? 'E' : 'W'}${Math.abs(Math.round(lon))}`,
         latitude: lat,
         longitude: lon,
         area,
@@ -201,13 +226,16 @@ export async function GET() {
       r.flareActivity.last24h.m > 0 || 
       r.flareActivity.last24h.x > 0
     ).length
-    const complexRegions = activeRegions.filter(r => 
-      assessMagneticComplexity(r.magneticClass) >= 5
-    ).length
+    // Complex regions are those with magnetic class more complex than A or B (e.g., BG, BGD, etc.)
+    const complexRegions = activeRegions.filter(r => {
+      const magClass = (r.magneticClass || '').toUpperCase()
+      // Complex if it contains G or D (like BG, BGD, GD, etc.) or is more than single letter
+      return magClass.length > 1 && (magClass.includes('G') || magClass.includes('D'))
+    }).length
     const newRegions = activeRegions.filter(r => r.history === 'New').length
     
     // Calculate probabilities
-    const probs = calculateFlareProb abilities(activeRegions)
+    const probs = calculateFlareProbabilities(activeRegions)
     
     // Determine overall threat level
     let overallThreat: SolarRegionData['riskAssessment']['overallThreat'] = 'Low'

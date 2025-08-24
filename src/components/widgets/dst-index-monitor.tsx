@@ -74,7 +74,7 @@ export default function DstIndexMonitor() {
   }
 
   const formatValue = (value: number) => {
-    return `${value > 0 ? '+' : ''}${value} nT`
+    return `${value > 0 ? '+' : ''}${value.toFixed(2)} nT`
   }
 
   if (loading) {

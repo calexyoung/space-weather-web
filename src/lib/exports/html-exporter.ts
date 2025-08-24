@@ -1,5 +1,6 @@
 import { ExportFormat } from '@prisma/client'
 import { ExportMetadata } from './markdown-exporter'
+import { escapeHTML, sanitizeHTML } from '@/lib/security/sanitizer'
 
 export interface HtmlExportOptions {
   includeSources?: boolean
@@ -828,9 +829,8 @@ export class HtmlExporter {
    * Utility functions
    */
   private static escapeHtml(text: string): string {
-    const div = document.createElement('div')
-    div.textContent = text
-    return div.innerHTML
+    // Use the secure HTML escaping function
+    return escapeHTML(text)
   }
 
   private static formatText(text: string): string {

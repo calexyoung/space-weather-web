@@ -76,16 +76,30 @@ export async function GET() {
       new Date(a.time_tag).getTime() - new Date(b.time_tag).getTime()
     )
     
-    // Get the most recent valid entry
+    // Get the most recent valid entry (field is 'flux' not 'f107')
+    let current: number
     const currentEntry = sortedData
-      .filter(d => d.f107 !== null && !isNaN(parseFloat(d.f107)))
+      .filter(d => d.flux !== null && d.flux !== undefined && !isNaN(parseFloat(d.flux)))
       .pop()
     
     if (!currentEntry) {
-      throw new Error('No valid F10.7 data available')
+      console.warn('No valid F10.7 data available, checking for alternative field names')
+      // Try alternative field names that NOAA might use
+      const altEntry = sortedData
+        .filter(d => (d.f107 !== null && !isNaN(parseFloat(d.f107))) || 
+                     (d.value !== null && !isNaN(parseFloat(d.value))))
+        .pop()
+      
+      if (!altEntry) {
+        console.error('F10.7 data format issue - no valid flux field found in:', sortedData[0])
+        throw new Error('No valid F10.7 data available')
+      }
+      
+      // Use alternative field
+      current = parseFloat(altEntry.f107 || altEntry.value)
+    } else {
+      current = parseFloat(currentEntry.flux)
     }
-    
-    const current = parseFloat(currentEntry.f107)
     
     // Process historical data (last 30 days)
     const thirtyDaysAgo = new Date()
@@ -93,11 +107,11 @@ export async function GET() {
     
     const last30Days = sortedData.filter(d => {
       const date = new Date(d.time_tag)
-      return date >= thirtyDaysAgo && d.f107 !== null
+      return date >= thirtyDaysAgo && (d.flux !== null || d.f107 !== null || d.value !== null)
     })
     
-    // Calculate statistics
-    const values30d = last30Days.map(d => parseFloat(d.f107))
+    // Calculate statistics - handle different field names
+    const values30d = last30Days.map(d => parseFloat(d.flux || d.f107 || d.value))
     const min30d = Math.min(...values30d)
     const max30d = Math.max(...values30d)
     const avg30d = values30d.reduce((a, b) => a + b, 0) / values30d.length
@@ -107,19 +121,22 @@ export async function GET() {
     const currentIndex = sortedValues.findIndex(v => v >= current)
     const percentile = Math.round((currentIndex / sortedValues.length) * 100)
     
-    // Calculate trend from last 7 days
-    const last7Days = last30Days.slice(-7).map(d => parseFloat(d.f107))
+    // Calculate trend from last 7 days - handle different field names
+    const last7Days = last30Days.slice(-7).map(d => parseFloat(d.flux || d.f107 || d.value))
     const trend = calculateTrend(last7Days)
     
     // Determine solar cycle phase
     const solarCyclePhase = determineSolarCyclePhase(current, avg30d)
     
-    // Format history for chart
-    const history = last30Days.map(d => ({
-      time: new Date(d.time_tag),
-      observed: parseFloat(d.f107),
-      adjusted: parseFloat(d.f107) * 0.9 // Simplified adjustment
-    }))
+    // Format history for chart - handle different field names
+    const history = last30Days.map(d => {
+      const value = parseFloat(d.flux || d.f107 || d.value)
+      return {
+        time: new Date(d.time_tag),
+        observed: value,
+        adjusted: value * 0.9 // Simplified adjustment
+      }
+    })
     
     // Generate simple forecast (3 days)
     const forecast: F107FluxData['forecast'] = []
@@ -139,10 +156,10 @@ export async function GET() {
       })
     }
     
-    // Calculate monthly average
+    // Calculate monthly average - handle different field names
     const monthlyValues = last30Days
       .slice(-30)
-      .map(d => parseFloat(d.f107))
+      .map(d => parseFloat(d.flux || d.f107 || d.value))
     const monthlyAverage = monthlyValues.length > 0
       ? Math.round(monthlyValues.reduce((a, b) => a + b, 0) / monthlyValues.length * 10) / 10
       : current

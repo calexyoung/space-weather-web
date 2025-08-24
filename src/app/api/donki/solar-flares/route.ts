@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getApiKey } from '@/lib/security/api-keys'
 
-const DONKI_API_KEY = process.env.NASA_API_KEY?.replace(/"/g, '') || 'DEMO_KEY'
 const DONKI_BASE_URL = 'https://api.nasa.gov/DONKI'
 const NOAA_XRAY_URL = 'https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json'
 const NOAA_REGIONS_URL = 'https://services.swpc.noaa.gov/json/solar_regions.json'
@@ -66,7 +66,9 @@ export async function GET(request: NextRequest) {
     let donkiError = null
     
     try {
-      const donkiUrl = `${DONKI_BASE_URL}/FLR?startDate=${startDateStr}&endDate=${endDateStr}&api_key=${DONKI_API_KEY}`
+      // Get NASA API key securely
+      const apiKey = getApiKey('NASA') || 'DEMO_KEY'
+      const donkiUrl = `${DONKI_BASE_URL}/FLR?startDate=${startDateStr}&endDate=${endDateStr}&api_key=${apiKey}`
       const donkiResponse = await fetch(donkiUrl, {
         headers: {
           'Accept': 'application/json',

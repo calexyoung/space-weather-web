@@ -1,10 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { getLlmService } from '@/lib/llm/service'
 import { createApiResponse, createApiError } from '@/lib/validators'
 import { LlmProvider, SourceType } from '@/lib/types/space-weather'
 import { db } from '@/lib/db'
 import { getTemplate } from '@/lib/templates/formats'
+import { withAuth } from '@/lib/auth/route-helper'
 
 // Request schema
 const GenerateReportRequestSchema = z.object({
@@ -35,7 +36,8 @@ const GenerateReportResponseSchema = z.object({
   cached: z.boolean().default(false),
 })
 
-export async function POST(request: Request) {
+// Authenticated POST handler - requires 'user' role minimum
+export const POST = withAuth(async (request: NextRequest, user) => {
   const startTime = Date.now()
   
   try {
@@ -150,9 +152,10 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
-}
+}, { requiredRole: 'user' }) // Users and admins can generate reports
 
-export async function GET(request: Request) {
+// Authenticated GET handler - anyone can read reports
+export const GET = withAuth(async (request: NextRequest, user) => {
   try {
     const url = new URL(request.url)
     const reportId = url.searchParams.get('reportId')
@@ -209,7 +212,7 @@ export async function GET(request: Request) {
       { status: 500 }
     )
   }
-}
+}, { requiredRole: 'viewer' }) // Everyone can read reports
 
 export async function OPTIONS() {
   return new Response(null, {

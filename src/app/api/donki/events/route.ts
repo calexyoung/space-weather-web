@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getApiKey } from '@/lib/security/api-keys';
 
 // Helper function to fetch recent flares from NOAA SWPC
 async function fetchNOAAFlares(startDate: Date, endDate: Date) {
@@ -63,7 +64,7 @@ export async function GET(request: NextRequest) {
     // NASA DONKI API endpoints
     // Note: DEMO_KEY has strict rate limits. Consider getting a free NASA API key at https://api.nasa.gov/
     const baseUrl = 'https://api.nasa.gov/DONKI';
-    const apiKey = process.env.NASA_API_KEY?.replace(/"/g, '') || 'DEMO_KEY';
+    const apiKey = getApiKey('NASA') || 'DEMO_KEY';
     
     const endpoints = {
       FLR: `${baseUrl}/FLR?startDate=${startDateStr}&endDate=${endDateStr}&api_key=${apiKey}`,

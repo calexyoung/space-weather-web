@@ -43,7 +43,8 @@ export async function GET() {
     const validData = xrayData.filter((d: Record<string, unknown>) => 
       d.flux !== null && 
       d.observed_flux !== null &&
-      !d.electron_contaminaton // Filter out contaminated data
+      !d.electron_contaminaton && // NOAA API has typo in field name
+      !d.electron_contamination // Check both spellings just in case
     )
     
     if (validData.length === 0) {

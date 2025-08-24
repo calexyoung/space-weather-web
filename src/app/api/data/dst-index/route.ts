@@ -167,11 +167,11 @@ export async function GET() {
     const stormProbability = calculateStormProbability(current, trend)
     
     const responseData: DstIndexData = {
-      current,
+      current: Math.round(current * 100) / 100,
       currentLevel: getDstLevel(current),
-      min24h,
-      max24h,
-      average24h,
+      min24h: Math.round(min24h * 100) / 100,
+      max24h: Math.round(max24h * 100) / 100,
+      average24h: Math.round(average24h * 100) / 100,
       trend,
       history,
       stormProbability

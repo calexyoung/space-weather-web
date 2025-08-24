@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { LlmProviderEnum } from '@/lib/types/space-weather'
 import { LlmConfig } from '@/lib/types/api'
+import { getApiKey, hasValidApiKey } from '@/lib/security/api-keys'
 
 // Base interface for all LLM providers
 export interface LlmProviderInterface {
@@ -28,8 +29,12 @@ export class OpenAiProvider implements LlmProviderInterface {
   private defaultModel: string
 
   constructor() {
+    const apiKey = getApiKey('OPENAI')
+    if (!apiKey) {
+      throw new Error('OpenAI API key not configured')
+    }
     this.client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+      apiKey: apiKey,
     })
     this.defaultModel = 'gpt-4o'
   }
@@ -122,8 +127,12 @@ export class AnthropicProvider implements LlmProviderInterface {
   private defaultModel: string
 
   constructor() {
+    const apiKey = getApiKey('ANTHROPIC')
+    if (!apiKey) {
+      throw new Error('Anthropic API key not configured')
+    }
     this.client = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
+      apiKey: apiKey,
     })
     this.defaultModel = 'claude-3-5-sonnet-20241022'
   }
@@ -200,7 +209,11 @@ export class GoogleProvider implements LlmProviderInterface {
   private defaultModel: string
 
   constructor() {
-    this.client = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '')
+    const apiKey = getApiKey('GOOGLE')
+    if (!apiKey) {
+      throw new Error('Google API key not configured')
+    }
+    this.client = new GoogleGenerativeAI(apiKey)
     this.defaultModel = 'gemini-1.5-flash'
   }
 

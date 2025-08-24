@@ -22,7 +22,13 @@
       "Bash(open http://localhost:3007/events)",
       "mcp__brave-search__brave_web_search",
       "Bash(npx tsc:*)",
-      "Bash(npm run lint)"
+      "Bash(npm run lint)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git restore:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "mcp__ide__executeCode"
     ],
     "deny": []
   }

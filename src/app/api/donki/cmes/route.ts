@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getApiKey } from '@/lib/security/api-keys'
 
-const DONKI_API_KEY = process.env.NASA_API_KEY?.replace(/"/g, '') || 'DEMO_KEY'
 const DONKI_BASE_URL = 'https://api.nasa.gov/DONKI'
 
 // Cache for storing API responses
@@ -98,8 +98,11 @@ export async function GET(request: NextRequest) {
     const startDateStr = startDate.toISOString().split('T')[0]
     const endDateStr = endDate.toISOString().split('T')[0]
     
+    // Get NASA API key securely
+    const apiKey = getApiKey('NASA') || 'DEMO_KEY'
+    
     // Fetch CME events from DONKI
-    const url = `${DONKI_BASE_URL}/CME?startDate=${startDateStr}&endDate=${endDateStr}&api_key=${DONKI_API_KEY}`
+    const url = `${DONKI_BASE_URL}/CME?startDate=${startDateStr}&endDate=${endDateStr}&api_key=${apiKey}`
     
     const response = await fetch(url, {
       headers: {
@@ -120,7 +123,7 @@ export async function GET(request: NextRequest) {
     const data: CME[] = await response.json()
     
     // Fetch WSA-ENLIL simulations for the same date range
-    const wsaEnlilUrl = `${DONKI_BASE_URL}/WSAEnlilSimulations?startDate=${startDateStr}&endDate=${endDateStr}&api_key=${DONKI_API_KEY}`
+    const wsaEnlilUrl = `${DONKI_BASE_URL}/WSAEnlilSimulations?startDate=${startDateStr}&endDate=${endDateStr}&api_key=${apiKey}`
     const wsaEnlilResponse = await fetch(wsaEnlilUrl, {
       headers: {
         'Accept': 'application/json',

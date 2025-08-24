@@ -180,24 +180,12 @@ export default function SolarRegionAnalyzer() {
           </div>
         </div>
 
-        {/* Earth-Directed Risk */}
-        <div className="flex items-center justify-between p-2 bg-gray-50 rounded">
-          <div className="flex items-center gap-2">
-            <Target className="w-4 h-4 text-blue-500" />
-            <span className="text-sm">Earth-Directed Risk</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Progress value={data.riskAssessment.earthDirectedRisk} className="w-20 h-2" />
-            <span className="text-sm font-medium">{data.riskAssessment.earthDirectedRisk}%</span>
-          </div>
-        </div>
-
         {/* Active Regions List */}
         {data.activeRegions.length > 0 && (
           <div className="space-y-1">
             <div className="text-sm font-medium">Active Regions</div>
             <div className="max-h-32 overflow-y-auto space-y-1">
-              {data.activeRegions.slice(0, 5).map(region => (
+              {data.activeRegions.map(region => (
                 <div
                   key={region.number}
                   className={cn(
