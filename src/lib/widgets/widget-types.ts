@@ -102,6 +102,12 @@ export const ProtonFluxDataSchema = z.object({
     expectedLevel: z.string().optional(),
   }),
   riskLevel: z.enum(['Minimal', 'Minor', 'Moderate', 'Strong', 'Severe', 'Extreme']),
+  recentFlares: z.array(z.object({
+    flareClass: z.string(), // e.g., "M1.5", "X2.0"
+    peakTime: z.date(),
+    activeRegion: z.number().optional(), // AR number if available
+    location: z.string().optional(), // heliographic coordinates if no AR
+  })).optional(),
 })
 
 // Aurora Forecast Widget Data

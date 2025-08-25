@@ -166,49 +166,88 @@ export default function ProtonFluxWidget({ config, onConfigChange }: ProtonFluxW
             </div>
           </div>
 
-          {/* S-Scale Reference - Always show for context */}
-          <div className="border-t pt-3">
-            <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-              <div className="font-medium mb-1">S-Scale Reference</div>
-              <div className="grid grid-cols-5 gap-1 text-center">
-                <div className={cn("rounded px-1 py-0.5", 
-                  data.stormLevel === 'S1' ? 'ring-2 ring-yellow-500' : '',
-                  'bg-yellow-100 dark:bg-yellow-900/30')}>
-                  <div className="font-medium">S1</div>
-                  <div className="text-[10px]">≥10</div>
-                </div>
-                <div className={cn("rounded px-1 py-0.5",
-                  data.stormLevel === 'S2' ? 'ring-2 ring-yellow-600' : '',
-                  'bg-yellow-200 dark:bg-yellow-800/30')}>
-                  <div className="font-medium">S2</div>
-                  <div className="text-[10px]">≥100</div>
-                </div>
-                <div className={cn("rounded px-1 py-0.5",
-                  data.stormLevel === 'S3' ? 'ring-2 ring-orange-600' : '',
-                  'bg-orange-200 dark:bg-orange-800/30')}>
-                  <div className="font-medium">S3</div>
-                  <div className="text-[10px]">≥1k</div>
-                </div>
-                <div className={cn("rounded px-1 py-0.5",
-                  data.stormLevel === 'S4' ? 'ring-2 ring-red-600' : '',
-                  'bg-red-200 dark:bg-red-800/30')}>
-                  <div className="font-medium">S4</div>
-                  <div className="text-[10px]">≥10k</div>
-                </div>
-                <div className={cn("rounded px-1 py-0.5",
-                  data.stormLevel === 'S5' ? 'ring-2 ring-purple-600' : '',
-                  'bg-purple-200 dark:bg-purple-800/30')}>
-                  <div className="font-medium">S5</div>
-                  <div className="text-[10px]">≥100k</div>
-                </div>
+          {/* Recent Solar Flares (24h) - Always visible */}
+          {data.recentFlares && data.recentFlares.length > 0 && (
+            <div className="border-t pt-3">
+              <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                Solar Flares (24h)
               </div>
-              <div className="text-[10px] text-center mt-1">pfu (&gt;10 MeV)</div>
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {data.recentFlares.slice(0, 10).map((flare, i) => (
+                  <div key={i} className="flex items-center justify-between text-xs bg-gray-50 dark:bg-gray-800 rounded px-2 py-1">
+                    <div className="flex items-center gap-2">
+                      <Badge 
+                        variant="outline" 
+                        className={cn(
+                          "text-[10px] px-1 py-0",
+                          flare.flareClass.startsWith('X') ? 'border-red-500 text-red-600' :
+                          flare.flareClass.startsWith('M') ? 'border-orange-500 text-orange-600' :
+                          flare.flareClass.startsWith('C') ? 'border-yellow-500 text-yellow-600' :
+                          'border-gray-400 text-gray-600'
+                        )}
+                      >
+                        {flare.flareClass}
+                      </Badge>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        {format(new Date(flare.peakTime), 'HH:mm')}
+                      </span>
+                    </div>
+                    <div className="text-gray-500 dark:text-gray-400 text-[10px]">
+                      {flare.activeRegion ? (
+                        <span>AR{flare.activeRegion}</span>
+                      ) : flare.location ? (
+                        <span>{flare.location}</span>
+                      ) : (
+                        <span>Unknown</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Expanded view with additional details */}
           {config.expanded && (
             <div className="space-y-4 border-t pt-4">
+              {/* S-Scale Reference */}
+              <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                <div className="font-medium mb-1">S-Scale Reference</div>
+                <div className="grid grid-cols-5 gap-1 text-center">
+                  <div className={cn("rounded px-1 py-0.5", 
+                    data.stormLevel === 'S1' ? 'ring-2 ring-yellow-500' : '',
+                    'bg-yellow-100 dark:bg-yellow-900/30')}>
+                    <div className="font-medium">S1</div>
+                    <div className="text-[10px]">≥10</div>
+                  </div>
+                  <div className={cn("rounded px-1 py-0.5",
+                    data.stormLevel === 'S2' ? 'ring-2 ring-yellow-600' : '',
+                    'bg-yellow-200 dark:bg-yellow-800/30')}>
+                    <div className="font-medium">S2</div>
+                    <div className="text-[10px]">≥100</div>
+                  </div>
+                  <div className={cn("rounded px-1 py-0.5",
+                    data.stormLevel === 'S3' ? 'ring-2 ring-orange-600' : '',
+                    'bg-orange-200 dark:bg-orange-800/30')}>
+                    <div className="font-medium">S3</div>
+                    <div className="text-[10px]">≥1k</div>
+                  </div>
+                  <div className={cn("rounded px-1 py-0.5",
+                    data.stormLevel === 'S4' ? 'ring-2 ring-red-600' : '',
+                    'bg-red-200 dark:bg-red-800/30')}>
+                    <div className="font-medium">S4</div>
+                    <div className="text-[10px]">≥10k</div>
+                  </div>
+                  <div className={cn("rounded px-1 py-0.5",
+                    data.stormLevel === 'S5' ? 'ring-2 ring-purple-600' : '',
+                    'bg-purple-200 dark:bg-purple-800/30')}>
+                    <div className="font-medium">S5</div>
+                    <div className="text-[10px]">≥100k</div>
+                  </div>
+                </div>
+                <div className="text-[10px] text-center mt-1">pfu (&gt;10 MeV)</div>
+              </div>
+
               {/* Storm Threshold Info */}
               {data.stormLevel !== 'None' && (
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 space-y-2">

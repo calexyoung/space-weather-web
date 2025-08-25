@@ -80,7 +80,7 @@ export function WidgetBase({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <CardTitle className="text-sm font-medium flex items-center space-x-2">
+            <CardTitle className="flex items-center space-x-2">
               <span>{config.title}</span>
               {trendIndicator && getTrendIcon(trendIndicator)}
             </CardTitle>

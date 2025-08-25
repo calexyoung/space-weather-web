@@ -705,3 +705,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file.
 *Transforming space weather data into actionable intelligence*
 
 </div>
+
+
+# Additional notes:
+

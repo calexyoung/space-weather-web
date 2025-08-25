@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Loader2, AlertTriangle, Sun, Target, Activity, TrendingUp } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Loader2, AlertTriangle, Sun, Target, Activity, TrendingUp, RefreshCw, Download, ChevronDown, ChevronUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface SolarRegionData {
@@ -56,6 +57,7 @@ export default function SolarRegionAnalyzer() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedRegion, setSelectedRegion] = useState<number | null>(null)
+  const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
     fetchRegionData()
@@ -64,6 +66,7 @@ export default function SolarRegionAnalyzer() {
   }, [])
 
   const fetchRegionData = async () => {
+    setLoading(true)
     try {
       const response = await fetch('/api/data/solar-regions')
       if (!response.ok) throw new Error('Failed to fetch solar region data')
@@ -75,6 +78,26 @@ export default function SolarRegionAnalyzer() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleExport = () => {
+    if (!data) return
+    
+    const exportData = {
+      timestamp: new Date().toISOString(),
+      activeRegions: data.activeRegions,
+      statistics: data.statistics,
+      riskAssessment: data.riskAssessment,
+      sunspotNumber: data.sunspotNumber
+    }
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `solar-regions-${new Date().toISOString()}.json`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const getThreatColor = (threat: string) => {
@@ -138,10 +161,44 @@ export default function SolarRegionAnalyzer() {
           <div className="flex items-center gap-2">
             <Sun className="w-5 h-5 text-yellow-500" />
             <span>Solar Regions</span>
+            <Badge className={cn(getThreatColor(data.riskAssessment.overallThreat))}>
+              {data.riskAssessment.overallThreat} Threat
+            </Badge>
           </div>
-          <Badge className={cn(getThreatColor(data.riskAssessment.overallThreat))}>
-            {data.riskAssessment.overallThreat} Threat
-          </Badge>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={handleExport}
+              title="Export data"
+            >
+              <Download className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={fetchRegionData}
+              disabled={loading}
+              title="Refresh"
+            >
+              <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => setExpanded(!expanded)}
+              title={expanded ? "Collapse" : "Expand"}
+            >
+              {expanded ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -248,6 +305,113 @@ export default function SolarRegionAnalyzer() {
             <span>{data.statistics.newRegions} new</span>
           </div>
         </div>
+
+        {/* Expanded Content */}
+        {expanded && (
+          <div className="space-y-4 border-t pt-4">
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Solar Activity Analysis</h4>
+              <div className="text-xs text-gray-600 space-y-1">
+                <p>Active regions on the solar surface are areas of intense magnetic activity that can produce solar flares and coronal mass ejections (CMEs).</p>
+                <p>Current Solar Status:</p>
+                <ul className="ml-4 space-y-1">
+                  <li>• Total Active Regions: {data.statistics.totalRegions}</li>
+                  <li>• Earth-Facing Regions: {data.statistics.earthFacingRegions}</li>
+                  <li>• Complex Magnetic Regions: {data.statistics.complexRegions}</li>
+                  <li>• Sunspot Number: {data.sunspotNumber.current}</li>
+                  <li>• Monthly Average: {data.sunspotNumber.monthly}</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Magnetic Classification Guide</h4>
+              <div className="text-xs text-gray-600 space-y-1">
+                <p>Regions are classified by their magnetic complexity:</p>
+                <ul className="ml-4 space-y-1">
+                  <li>• <span className="font-medium">Alpha (α)</span>: Simple unipolar region</li>
+                  <li>• <span className="font-medium">Beta (β)</span>: Bipolar region with clear polarity separation</li>
+                  <li>• <span className="font-medium">Gamma (γ)</span>: Complex region with mixed polarities</li>
+                  <li>• <span className="font-medium">Beta-Gamma (βγ)</span>: Bipolar with some mixing</li>
+                  <li>• <span className="font-medium">Delta (δ)</span>: Opposite polarities within 2° (highest flare potential)</li>
+                  <li>• <span className="font-medium">Beta-Gamma-Delta (βγδ)</span>: Most complex and dangerous</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Flare Probability Assessment</h4>
+              <div className="text-xs text-gray-600 space-y-1">
+                <p>24-hour flare probabilities based on current active regions:</p>
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <span>M-class flares (medium):</span>
+                    <span className="font-medium">{data.riskAssessment.mClassProbability}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>X-class flares (extreme):</span>
+                    <span className="font-medium">{data.riskAssessment.xClassProbability}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Proton event probability:</span>
+                    <span className="font-medium">{data.riskAssessment.protonEventProbability}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Earth-directed risk:</span>
+                    <span className="font-medium">{data.riskAssessment.earthDirectedRisk}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Potential Impacts</h4>
+              <div className="text-xs text-gray-600">
+                {data.riskAssessment.overallThreat === 'Low' && (
+                  <p>Low solar activity. No significant space weather impacts expected.</p>
+                )}
+                {data.riskAssessment.overallThreat === 'Moderate' && (
+                  <div className="space-y-1">
+                    <p>Moderate solar activity with potential for:</p>
+                    <p>• Minor radio blackouts on sunlit side</p>
+                    <p>• Weak degradation of HF radio communication</p>
+                    <p>• Minor satellite drag variations</p>
+                  </div>
+                )}
+                {data.riskAssessment.overallThreat === 'Elevated' && (
+                  <div className="space-y-1">
+                    <p>Elevated solar activity with increased risk of:</p>
+                    <p>• R1-R2 radio blackouts possible</p>
+                    <p>• HF radio degradation on sunlit side</p>
+                    <p>• Increased satellite drag</p>
+                    <p>• Minor impacts to GPS accuracy</p>
+                  </div>
+                )}
+                {(data.riskAssessment.overallThreat === 'High' || data.riskAssessment.overallThreat === 'Extreme') && (
+                  <div className="space-y-1">
+                    <p className="text-red-600 font-medium">High solar activity - significant impacts likely:</p>
+                    <p>• R3-R5 radio blackouts expected</p>
+                    <p>• Complete HF radio blackout on sunlit side possible</p>
+                    <p>• Satellite operations may be affected</p>
+                    <p>• GPS navigation degraded or unavailable</p>
+                    <p>• Radiation hazard to astronauts</p>
+                    <p>• Possible power grid fluctuations</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {data.statistics.complexRegions > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium">⚠️ Complex Regions Alert</h4>
+                <div className="text-xs text-gray-600">
+                  <p>There are currently {data.statistics.complexRegions} magnetically complex regions on the Sun.</p>
+                  <p>These regions have enhanced potential for significant solar flares and should be monitored closely.</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   )
