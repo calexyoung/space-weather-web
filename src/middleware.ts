@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { verifyToken, extractTokenFromHeader } from '@/lib/auth/jwt'
+import { verifyToken, extractTokenFromHeader } from '@/lib/auth/jwt-edge'
 import { getCORSHeaders } from '@/lib/security/headers'
 import { applyRateLimit, getRateLimitHeaders } from '@/lib/security/rate-limiter-edge'
 

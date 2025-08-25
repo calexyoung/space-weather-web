@@ -55,7 +55,7 @@ export async function GET() {
     
     // Calculate recent trend
     const recentKp = validKp.slice(-8).map((row: unknown[]) => parseFloat(String(row[1])))
-    const avgRecentKp = recentKp.reduce((a, b) => a + b, 0) / recentKp.length
+    const avgRecentKp = recentKp.reduce((a: number, b: number) => a + b, 0) / recentKp.length
     
     // Simple forecast model based on trend and mean reversion
     let forecastKp = currentKp

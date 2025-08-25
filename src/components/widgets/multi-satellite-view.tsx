@@ -390,7 +390,7 @@ export default function MultiSatelliteView() {
                       </div>
                     </div>
                     
-                    {sat.solarWind && (
+                    {'solarWind' in sat && sat.solarWind && (
                       <div className="border-t pt-2">
                         <div className="font-medium mb-1">Solar Wind</div>
                         <div className="grid grid-cols-3 gap-2">
@@ -402,15 +402,17 @@ export default function MultiSatelliteView() {
                             <div className="text-gray-500">Density</div>
                             <div className="font-mono">{formatValue(sat.solarWind.density, ' p/cm³')}</div>
                           </div>
-                          <div>
-                            <div className="text-gray-500">Temp</div>
-                            <div className="font-mono">{formatValue(sat.solarWind.temperature, ' K')}</div>
-                          </div>
+                          {'temperature' in sat.solarWind && (
+                            <div>
+                              <div className="text-gray-500">Temp</div>
+                              <div className="font-mono">{formatValue(sat.solarWind.temperature, ' K')}</div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
                     
-                    {sat.magneticField && (
+                    {'magneticField' in sat && sat.magneticField && (
                       <div className="border-t pt-2">
                         <div className="font-medium mb-1">Magnetic Field</div>
                         <div className="grid grid-cols-2 gap-2">

@@ -203,7 +203,7 @@ export async function GET(request: Request) {
     // Simple forecast (placeholder - could use ML model)
     const forecast = {
       nextHour: {
-        speed: finalData.solarWind.speed,
+        speed: finalData.solarWind.speed ?? 400,
         confidence: consensus.confidence
       }
     }
@@ -212,14 +212,14 @@ export async function GET(request: Request) {
     const response: SolarWindResponse = {
       data: {
         current: {
-          speed: finalData.solarWind.speed,
-          density: finalData.solarWind.density,
-          temperature: finalData.solarWind.temperature,
+          speed: finalData.solarWind.speed ?? 400,
+          density: finalData.solarWind.density ?? 5,
+          temperature: finalData.solarWind.temperature ?? 100000,
           magneticField: {
-            bt: finalData.magnetic.bt,
-            bz: finalData.magnetic.bz,
-            by: finalData.magnetic.by,
-            bx: finalData.magnetic.bx
+            bt: finalData.magnetic.bt ?? 5,
+            bz: finalData.magnetic.bz ?? 0,
+            by: finalData.magnetic.by ?? 0,
+            bx: finalData.magnetic.bx ?? 0
           },
           timestamp: new Date().toISOString()
         },
@@ -363,9 +363,9 @@ function processDSCOVRData(data: any) {
 function calculateTrends(plasmaHistory: any[], magHistory: any[]): any {
   // Simple trend calculation based on recent history
   const trends = {
-    speed: 'stable' as const,
-    density: 'stable' as const,
-    bz: 'variable' as const
+    speed: 'stable' as 'stable' | 'increasing' | 'decreasing',
+    density: 'stable' as 'stable' | 'increasing' | 'decreasing',
+    bz: 'variable' as 'variable' | 'southward' | 'northward'
   }
   
   if (plasmaHistory.length > 10) {

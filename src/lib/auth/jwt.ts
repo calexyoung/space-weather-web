@@ -1,10 +1,10 @@
-import jwt from 'jsonwebtoken'
+import * as jwt from 'jsonwebtoken'
 import { NextRequest } from 'next/server'
 import { getJWTSecret } from '@/lib/security/api-keys'
 
 // JWT configuration
-const JWT_EXPIRY = process.env.JWT_EXPIRY || '24h'
-const REFRESH_TOKEN_EXPIRY = process.env.REFRESH_TOKEN_EXPIRY || '7d'
+const JWT_EXPIRY: string | number = process.env.JWT_EXPIRY || '24h'
+const REFRESH_TOKEN_EXPIRY: string | number = process.env.REFRESH_TOKEN_EXPIRY || '7d'
 
 // User payload interface
 export interface UserPayload {
@@ -30,11 +30,13 @@ export function generateAccessToken(user: UserPayload): string {
     type: 'access'
   }
   
-  return jwt.sign(payload, getJWTSecret(), {
-    expiresIn: JWT_EXPIRY,
+  const options: jwt.SignOptions = {
+    expiresIn: JWT_EXPIRY as any,
     issuer: 'space-weather-web',
     audience: 'space-weather-api'
-  })
+  }
+  
+  return jwt.sign(payload as any, getJWTSecret(), options)
 }
 
 /**
@@ -46,11 +48,13 @@ export function generateRefreshToken(user: UserPayload): string {
     type: 'refresh'
   }
   
-  return jwt.sign(payload, getJWTSecret(), {
-    expiresIn: REFRESH_TOKEN_EXPIRY,
+  const options: jwt.SignOptions = {
+    expiresIn: REFRESH_TOKEN_EXPIRY as any,
     issuer: 'space-weather-web',
     audience: 'space-weather-api'
-  })
+  }
+  
+  return jwt.sign(payload as any, getJWTSecret(), options)
 }
 
 /**
