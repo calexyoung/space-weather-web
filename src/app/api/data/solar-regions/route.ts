@@ -153,14 +153,15 @@ export async function GET() {
       }
     }
     
-    // Get today's date in YYYY-MM-DD format
-    const today = new Date().toISOString().split('T')[0]
+    // Get the most recent date from the data
+    const dates = regionsData.map(r => r.observed_date).filter(Boolean)
+    const mostRecentDate = dates.length > 0 ? dates.sort().reverse()[0] : null
     
-    // Process regions - filter for today's date and valid regions with area, spot_class, and mag_class
-    // These are the visible spots for the current date
+    // Process regions - filter for the most recent date and valid regions with area, spot_class, and mag_class
+    // These are the visible spots for the most recent observation
     const validRegions = regionsData.filter(region => 
       region.observed_date && 
-      region.observed_date.startsWith(today) &&
+      region.observed_date === mostRecentDate &&
       region.area !== null && 
       region.area !== undefined &&
       region.spot_class !== null && 
@@ -194,7 +195,6 @@ export async function GET() {
       const cFlares = region.c_xray_events || 0
       const mFlares = region.m_xray_events || 0
       const xFlares = region.x_xray_events || 0
-      const complexity = assessMagneticComplexity(magneticClass)
       
       return {
         number: region.region || 0,

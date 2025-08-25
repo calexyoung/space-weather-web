@@ -111,7 +111,18 @@ async function fetchSatelliteData(url: string): Promise<any> {
       next: { revalidate: 60 } // 1 minute cache
     })
     if (response.ok) {
-      return await response.json()
+      // Check if response has content before parsing
+      const text = await response.text()
+      if (!text || text.trim() === '') {
+        console.warn(`Empty response from ${url}`)
+        return null
+      }
+      try {
+        return JSON.parse(text)
+      } catch (parseError) {
+        console.warn(`Invalid JSON from ${url}:`, parseError)
+        return null
+      }
     }
   } catch (error) {
     console.warn(`Failed to fetch ${url}:`, error)
