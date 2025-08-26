@@ -71,7 +71,7 @@ export const XrayFluxDataSchema = z.object({
     peak: z.string(), // e.g., "M2.1"
     duration: z.number().optional(), // minutes
     location: z.string().optional(), // Active region
-  })).max(10),
+  })).max(50), // Increased limit to show all 24-hour flares
   trend: z.enum(['increasing', 'decreasing', 'stable']),
   riskLevel: z.enum(['Minimal', 'Minor', 'Moderate', 'Strong', 'Severe']),
 })

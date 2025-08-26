@@ -4,6 +4,7 @@ import React from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Zap, Sun, Clock, AlertTriangle } from 'lucide-react'
 import { format } from 'date-fns'
+import { formatInTimeZone } from 'date-fns-tz'
 import { WidgetBase, Sparkline, widgetUtils } from '@/lib/widgets/widget-base'
 import { useWidgetData } from '@/lib/widgets/data-fetcher'
 import { XrayFluxData, WidgetConfig } from '@/lib/widgets/widget-types'
@@ -167,11 +168,16 @@ export default function XrayFluxWidget({ config, onConfigChange }: XrayFluxWidge
           {/* Solar Flares (24h) */}
           {data.recentFlares.length > 0 && (
             <div className="border-t pt-3">
-              <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-                Solar Flares (24h)
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                  Solar Flares (24h UTC)
+                </div>
+                <div className="text-xs text-gray-500">
+                  {data.recentFlares.length} events
+                </div>
               </div>
-              <div className="space-y-1 max-h-32 overflow-y-auto">
-                {data.recentFlares.slice(0, 10).map((flare, i) => {
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {data.recentFlares.map((flare, i) => {
                   // Parse active region or location from flare.location field
                   let activeRegion: string | undefined
                   let coordinates: string | undefined
@@ -202,7 +208,7 @@ export default function XrayFluxWidget({ config, onConfigChange }: XrayFluxWidge
                           {flare.peak}
                         </Badge>
                         <span className="text-gray-600 dark:text-gray-400">
-                          {format(flare.time, 'HH:mm')}
+                          {formatInTimeZone(flare.time, 'UTC', 'MMM dd HH:mm')}
                         </span>
                       </div>
                       <div className="text-gray-500 dark:text-gray-400 text-[10px]">
