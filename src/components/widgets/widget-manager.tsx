@@ -189,36 +189,41 @@ export default function WidgetManager({ className = '' }: WidgetManagerProps) {
       </div>
 
       {/* Widget Grid with Responsive Layout */}
-      <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-        {visibleWidgets.map((widget) => {
-          const WidgetComponent = WIDGET_COMPONENTS[widget.id as keyof typeof WIDGET_COMPONENTS]
-          
-          if (!WidgetComponent) {
-            console.warn(`Widget component not found for: ${widget.id}`)
-            return null
-          }
-
-          // Special layout handling for different widgets
-          const getWidgetColSpan = (widgetId: string) => {
-            switch (widgetId) {
-              case 'aurora-forecast':
-              case 'satellite-environment':
-                return 'xl:col-span-2' // Wider widgets on larger screens
-              default:
-                return ''
+      {visibleWidgets.length > 0 && (
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {visibleWidgets.map((widget) => {
+            const WidgetComponent = WIDGET_COMPONENTS[widget.id as keyof typeof WIDGET_COMPONENTS]
+            
+            if (!WidgetComponent) {
+              console.warn(`Widget component not found for: ${widget.id}`)
+              return null
             }
-          }
 
-          return (
-            <div key={widget.id} className={`${getWidgetColSpan(widget.id)}`}>
-              <WidgetComponent
-                config={widget}
-                onConfigChange={(updates) => updateWidget(widget.id, updates)}
-              />
-            </div>
-          )
-        })}
-      </div>
+            // Special layout handling for different widgets
+            const getWidgetColSpan = (widgetId: string) => {
+              switch (widgetId) {
+                case 'aurora-forecast':
+                case 'satellite-environment':
+                  return 'xl:col-span-2' // Wider widgets on larger screens
+                default:
+                  return ''
+              }
+            }
+
+            // Type assertion to fix TypeScript error
+            const Component = WidgetComponent as React.ComponentType<any>
+
+            return (
+              <div key={widget.id} className={`${getWidgetColSpan(widget.id)}`}>
+                <Component
+                  config={widget}
+                  onConfigChange={(updates: any) => updateWidget(widget.id, updates)}
+                />
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       {/* No Visible Widgets Message */}
       {visibleWidgets.length === 0 && (

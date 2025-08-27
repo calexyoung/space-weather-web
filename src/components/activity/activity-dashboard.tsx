@@ -9,8 +9,17 @@ import XrayFluxWidget from '@/components/widgets/xray-flux-widget'
 import SolarWindWidget from '@/components/widgets/solar-wind-widget'
 import ProtonFluxWidget from '@/components/widgets/proton-flux-widget'
 import KpIndexWidget from '@/components/widgets/kp-index-widget'
+import F107FluxTracker from '@/components/widgets/f107-flux-tracker'
+import AviationWeather from '@/components/widgets/aviation-weather'
+import EnlilModel from '@/components/widgets/enlil-model'
+import SolarCycleDashboard from '@/components/widgets/solar-cycle-dashboard'
+import MultiSatelliteView from '@/components/widgets/multi-satellite-view'
+import AlertEngine from '@/components/widgets/alert-engine'
+import AuroraForecastWidget from '@/components/widgets/aurora-forecast-widget'
+import SatelliteEnvironmentWidget from '@/components/widgets/satellite-environment-widget'
 import { GripVertical } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface WidgetItem {
   id: string
@@ -154,6 +163,60 @@ export default function ActivityDashboard() {
         position: 5,
         expanded: false
       }
+    },
+    {
+      id: 'f107-flux',
+      title: 'F10.7 Solar Flux Tracker',
+      component: F107FluxTracker,
+    },
+    {
+      id: 'aviation-weather',
+      title: 'Aviation Weather',
+      component: AviationWeather,
+    },
+    {
+      id: 'enlil-model',
+      title: 'ENLIL Model',
+      component: EnlilModel,
+    },
+    {
+      id: 'solar-cycle',
+      title: 'Solar Cycle Dashboard',
+      component: SolarCycleDashboard,
+    },
+    {
+      id: 'multi-satellite',
+      title: 'Multi-Satellite View',
+      component: MultiSatelliteView,
+    },
+    {
+      id: 'alert-engine',
+      title: 'Alert Engine',
+      component: AlertEngine,
+    },
+    {
+      id: 'aurora-forecast',
+      title: 'Aurora Forecast',
+      component: AuroraForecastWidget,
+      config: {
+        id: 'aurora-forecast',
+        title: 'Aurora Forecast',
+        refreshInterval: 300000, // 5 minutes
+        isVisible: true,
+        expanded: false
+      }
+    },
+    {
+      id: 'satellite-environment',
+      title: 'Satellite Environment',
+      component: SatelliteEnvironmentWidget,
+      config: {
+        id: 'satellite-environment',
+        title: 'Satellite Environment',
+        refreshInterval: 120000, // 2 minutes
+        isVisible: true,
+        expanded: false
+      }
     }
   ]
 
@@ -202,7 +265,7 @@ export default function ActivityDashboard() {
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Activity</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Current Activity</h1>
             <p className="text-gray-600 mt-2">
               Real-time space weather activity monitoring
             </p>
@@ -227,7 +290,7 @@ export default function ActivityDashboard() {
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Activity</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Current Activity</h1>
             <p className="text-gray-600 mt-2">
               Real-time space weather activity monitoring - Drag widgets to reorder
             </p>
@@ -245,6 +308,66 @@ export default function ActivityDashboard() {
               />
             ))}
           </div>
+
+          {/* Widget Information Card */}
+          <Card className="mt-8">
+            <CardHeader>
+              <CardTitle>About These Widgets</CardTitle>
+              <CardDescription>
+                Advanced space weather monitoring capabilities
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold mb-2">Data Sources</h3>
+                  <ul className="space-y-1 text-sm text-gray-600">
+                    <li>• NOAA Space Weather Prediction Center (SWPC)</li>
+                    <li>• GOES Satellite X-ray and Particle Sensors</li>
+                    <li>• ACE/DSCOVR Solar Wind Monitors</li>
+                    <li>• Ground-Based Magnetometer Networks</li>
+                    <li>• WSA-ENLIL Solar Wind Model</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">Update Frequencies</h3>
+                  <ul className="space-y-1 text-sm text-gray-600">
+                    <li>• DST Index: Every minute</li>
+                    <li>• F10.7 Flux: Hourly</li>
+                    <li>• Solar Regions: Hourly</li>
+                    <li>• Aviation Weather: Every 5 minutes</li>
+                    <li>• ENLIL Model: Every 10 minutes</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-2">Widget Features</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-blue-800">
+                  <div>
+                    <strong>DST Index Monitor</strong>
+                    <p>Tracks geomagnetic storm intensity and provides storm probability forecasts</p>
+                  </div>
+                  <div>
+                    <strong>F10.7 Solar Flux</strong>
+                    <p>Monitors solar radio emissions and solar cycle phase</p>
+                  </div>
+                  <div>
+                    <strong>Solar Regions</strong>
+                    <p>Analyzes active regions for flare potential and Earth-directed risks</p>
+                  </div>
+                  <div>
+                    <strong>Aviation Weather</strong>
+                    <p>Provides flight-specific impacts including radiation and communication status</p>
+                  </div>
+                  <div>
+                    <strong>ENLIL Model</strong>
+                    <p>Displays solar wind predictions and CME arrival forecasts</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </DndProvider>
