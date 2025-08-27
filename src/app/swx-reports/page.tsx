@@ -1,14 +1,15 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { FileText, Download, Calendar, Filter, Search, Eye, Clock, ChevronRight, FileJson, FileCode, FilePlus } from 'lucide-react'
+import { FileText, Download, Calendar, Filter, Search, Eye, Clock, ChevronRight, FileJson, FileCode, FilePlus, History, Zap } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import Link from 'next/link'
+import ReportGeneratorTab from '@/components/dashboard/report-generator-tab'
+import ReportsHistoryTab from '@/components/dashboard/reports-history-tab'
 
 interface Report {
   id: string
@@ -26,6 +27,7 @@ export default function SWxReportsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState('all')
   const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('reports')
 
   useEffect(() => {
     // Simulate loading reports
@@ -118,24 +120,35 @@ export default function SWxReportsPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">SWx Reports</h1>
-              <p className="text-gray-600 mt-2">
-                Space weather reports, analyses, and forecasts
-              </p>
-            </div>
-            <Link href="/dashboard?tab=report-generator">
-              <Button className="flex items-center gap-2">
-                <FilePlus className="w-4 h-4" />
-                Generate New Report
-              </Button>
-            </Link>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">SWx Reports Center</h1>
+            <p className="text-gray-600 mt-2">
+              Generate, manage, and analyze space weather reports
+            </p>
           </div>
         </div>
 
-        {/* Search and Filter Bar */}
-        <Card className="mb-6">
+        {/* Main Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="reports" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Reports
+            </TabsTrigger>
+            <TabsTrigger value="generate" className="flex items-center gap-2">
+              <Zap className="w-4 h-4" />
+              Generate Report
+            </TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <History className="w-4 h-4" />
+              History & Analytics
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Reports Tab Content */}
+          <TabsContent value="reports" className="space-y-6">
+            {/* Search and Filter Bar */}
+            <Card>
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1 relative">
@@ -164,8 +177,8 @@ export default function SWxReportsPage() {
           </CardContent>
         </Card>
 
-        {/* Report Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            {/* Report Statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">Total Reports</CardTitle>
@@ -202,17 +215,17 @@ export default function SWxReportsPage() {
               <p className="text-2xl font-bold text-blue-600">3</p>
             </CardContent>
           </Card>
-        </div>
+            </div>
 
-        {/* Reports Tabs */}
-        <Tabs defaultValue="recent" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+            {/* Reports Sub-Tabs */}
+            <Tabs defaultValue="recent" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="recent">Recent Reports</TabsTrigger>
             <TabsTrigger value="templates">Report Templates</TabsTrigger>
             <TabsTrigger value="scheduled">Scheduled Reports</TabsTrigger>
-          </TabsList>
+              </TabsList>
 
-          <TabsContent value="recent" className="space-y-4">
+              <TabsContent value="recent" className="space-y-4 mt-6">
             {loading ? (
               <Card>
                 <CardContent className="p-8 text-center">
@@ -269,9 +282,9 @@ export default function SWxReportsPage() {
                 </Card>
               ))
             )}
-          </TabsContent>
+              </TabsContent>
 
-          <TabsContent value="templates" className="space-y-4">
+              <TabsContent value="templates" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardHeader>
@@ -337,9 +350,9 @@ export default function SWxReportsPage() {
                 </CardContent>
               </Card>
             </div>
-          </TabsContent>
+              </TabsContent>
 
-          <TabsContent value="scheduled" className="space-y-4">
+              <TabsContent value="scheduled" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Scheduled Report Generation</CardTitle>
@@ -392,6 +405,18 @@ export default function SWxReportsPage() {
                 </div>
               </CardContent>
             </Card>
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
+
+          {/* Generate Report Tab Content */}
+          <TabsContent value="generate" className="space-y-6">
+            <ReportGeneratorTab />
+          </TabsContent>
+
+          {/* History & Analytics Tab Content */}
+          <TabsContent value="history" className="space-y-6">
+            <ReportsHistoryTab />
           </TabsContent>
         </Tabs>
       </div>

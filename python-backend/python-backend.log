@@ -330,3 +330,27 @@
 2025-08-26 06:29:19,518 - SpaceWeatherAPI - INFO - ------------------------------------------------------------
 2025-08-26 06:31:29,546 - SpaceWeatherAPI - INFO - Python backend shutting down
 2025-08-26 06:31:29,817 - SpaceWeatherAPI - INFO - Python backend shutting down
+2025-08-27 13:38:08,904 - SpaceWeatherAPI - INFO - ============================================================
+2025-08-27 13:38:08,908 - SpaceWeatherAPI - INFO - Python Backend Starting - 2025-08-27 13:38:08.908455
+2025-08-27 13:38:08,913 - SpaceWeatherAPI - INFO - Flask version: 3.0.0
+2025-08-27 13:38:08,913 - SpaceWeatherAPI - INFO - Python port: 5001
+2025-08-27 13:38:08,913 - SpaceWeatherAPI - INFO - CORS enabled for: localhost:3000, 3006, 3007
+2025-08-27 13:38:08,913 - SpaceWeatherAPI - INFO - ============================================================
+2025-08-27 13:38:08,913 - SpaceWeatherAPI - INFO - Data collectors initialized successfully
+2025-08-27 13:38:08,919 - SpaceWeatherAPI - INFO - Starting Flask application on port 5001
+2025-08-27 13:38:08,919 - SpaceWeatherAPI - INFO - Debug mode: True
+2025-08-27 13:38:08,920 - SpaceWeatherAPI - INFO - Python backend ready to serve requests
+2025-08-27 13:38:08,920 - SpaceWeatherAPI - INFO - ------------------------------------------------------------
+2025-08-27 13:38:22,068 - SpaceWeatherAPI - INFO - ============================================================
+2025-08-27 13:38:22,068 - SpaceWeatherAPI - INFO - Python Backend Starting - 2025-08-27 13:38:22.068842
+2025-08-27 13:38:22,077 - SpaceWeatherAPI - INFO - Flask version: 3.0.0
+2025-08-27 13:38:22,077 - SpaceWeatherAPI - INFO - Python port: 5001
+2025-08-27 13:38:22,077 - SpaceWeatherAPI - INFO - CORS enabled for: localhost:3000, 3006, 3007
+2025-08-27 13:38:22,078 - SpaceWeatherAPI - INFO - ============================================================
+2025-08-27 13:38:22,078 - SpaceWeatherAPI - INFO - Data collectors initialized successfully
+2025-08-27 13:38:22,096 - SpaceWeatherAPI - INFO - Starting Flask application on port 5001
+2025-08-27 13:38:22,096 - SpaceWeatherAPI - INFO - Debug mode: True
+2025-08-27 13:38:22,096 - SpaceWeatherAPI - INFO - Python backend ready to serve requests
+2025-08-27 13:38:22,096 - SpaceWeatherAPI - INFO - ------------------------------------------------------------
+2025-08-27 14:48:23,346 - SpaceWeatherAPI - INFO - Python backend shutting down
+2025-08-27 14:48:23,635 - SpaceWeatherAPI - INFO - Python backend shutting down

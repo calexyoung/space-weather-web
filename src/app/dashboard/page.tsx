@@ -1,16 +1,13 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { BarChart3, TrendingUp, Satellite, AlertTriangle, Globe, Zap, Activity, Database, FileText, Settings, Clock } from 'lucide-react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Database, Clock, FileText, ArrowRight } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import CurrentStatusTab from '@/components/dashboard/current-status-tab'
+import { Button } from '@/components/ui/button'
 import DataSourcesTab from '@/components/dashboard/data-sources-tab'
-import ReportGeneratorTab from '@/components/dashboard/report-generator-tab'
-import ReportsHistoryTab from '@/components/dashboard/reports-history-tab'
+import Link from 'next/link'
 
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState('current-status')
   const [currentTime, setCurrentTime] = useState<string>('')
 
   useEffect(() => {
@@ -35,7 +32,7 @@ export default function DashboardPage() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
               <p className="text-gray-600 mt-2">
-                Real-time space weather monitoring and automated report generation
+                Real-time space weather data source monitoring
               </p>
             </div>
             <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg shadow-sm">
@@ -47,54 +44,53 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8 bg-white shadow-sm">
-            <TabsTrigger 
-              value="current-status" 
-              className="flex items-center gap-2 data-[state=active]:bg-nasa-blue data-[state=active]:text-white"
-            >
-              <Activity className="w-4 h-4" />
-              Current Status
-            </TabsTrigger>
-            <TabsTrigger 
-              value="data-sources" 
-              className="flex items-center gap-2 data-[state=active]:bg-nasa-blue data-[state=active]:text-white"
-            >
-              <Database className="w-4 h-4" />
-              Data Sources
-            </TabsTrigger>
-            <TabsTrigger 
-              value="report-generator" 
-              className="flex items-center gap-2 data-[state=active]:bg-nasa-blue data-[state=active]:text-white"
-            >
-              <FileText className="w-4 h-4" />
-              Report Generator
-            </TabsTrigger>
-            <TabsTrigger 
-              value="reports-history" 
-              className="flex items-center gap-2 data-[state=active]:bg-nasa-blue data-[state=active]:text-white"
-            >
-              <BarChart3 className="w-4 h-4" />
-              Reports History
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="current-status" className="space-y-6">
-            <CurrentStatusTab />
-          </TabsContent>
-
-          <TabsContent value="data-sources" className="space-y-6">
-            <DataSourcesTab />
-          </TabsContent>
-
-          <TabsContent value="report-generator" className="space-y-6">
-            <ReportGeneratorTab />
-          </TabsContent>
-
-          <TabsContent value="reports-history" className="space-y-6">
-            <ReportsHistoryTab />
-          </TabsContent>
-        </Tabs>
+        
+        {/* Data Sources Section */}
+        <div className="space-y-6">
+          <DataSourcesTab />
+        </div>
+        
+        {/* Report Center Card */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              Space Weather Reports Center
+            </CardTitle>
+            <CardDescription>
+              Generate, manage, and analyze comprehensive space weather reports
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 mb-4">
+              Access our comprehensive reports center to:
+            </p>
+            <ul className="space-y-2 mb-6 text-sm text-gray-600">
+              <li className="flex items-center gap-2">
+                <span className="text-green-500">•</span>
+                Generate AI-powered space weather reports
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-blue-500">•</span>
+                View and manage report history
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-purple-500">•</span>
+                Access report templates and scheduling
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-orange-500">•</span>
+                Export reports in multiple formats
+              </li>
+            </ul>
+            <Link href="/swx-reports">
+              <Button className="w-full sm:w-auto">
+                Go to Reports Center
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

@@ -5,16 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Settings, Eye, EyeOff, GripVertical } from 'lucide-react'
 import { WidgetConfig, WidgetType, WIDGET_REGISTRY } from '@/lib/widgets/widget-types'
 
-// Import all widget components
-import AuroraForecastWidget from './aurora-forecast-widget'
-import SatelliteEnvironmentWidget from './satellite-environment-widget'
-import { PythonAnalysisWidget } from './python-analysis-widget'
-
 // Widget component mapping (only includes widgets shown on Dashboard)
+// Currently all widgets are excluded and shown on dedicated pages
 const WIDGET_COMPONENTS = {
-  'aurora-forecast': AuroraForecastWidget,
-  'satellite-environment': SatelliteEnvironmentWidget,
-  'python-analysis': PythonAnalysisWidget,
+  // All widgets have been moved to dedicated pages
 } as const
 
 interface WidgetManagerProps {
@@ -27,8 +21,8 @@ export default function WidgetManager({ className = '' }: WidgetManagerProps) {
 
   // Initialize widgets with default configuration
   useEffect(() => {
-    // Exclude specific widgets from Dashboard
-    const excludedWidgets = ['kp-index', 'solar-wind', 'xray-flux', 'proton-flux']
+    // Exclude specific widgets from Dashboard (they are shown on other pages)
+    const excludedWidgets = ['kp-index', 'solar-wind', 'xray-flux', 'proton-flux', 'aurora-forecast', 'satellite-environment', 'python-analysis']
     
     const defaultWidgets: WidgetConfig[] = Object.entries(WIDGET_REGISTRY)
       .filter(([id]) => !excludedWidgets.includes(id))
@@ -108,8 +102,8 @@ export default function WidgetManager({ className = '' }: WidgetManagerProps) {
   }
 
   const resetToDefaults = () => {
-    // Exclude specific widgets from Dashboard
-    const excludedWidgets = ['kp-index', 'solar-wind', 'xray-flux', 'proton-flux']
+    // Exclude specific widgets from Dashboard (they are shown on other pages)
+    const excludedWidgets = ['kp-index', 'solar-wind', 'xray-flux', 'proton-flux', 'aurora-forecast', 'satellite-environment', 'python-analysis']
     
     const defaultWidgets: WidgetConfig[] = Object.entries(WIDGET_REGISTRY)
       .filter(([id]) => !excludedWidgets.includes(id))
@@ -228,21 +222,29 @@ export default function WidgetManager({ className = '' }: WidgetManagerProps) {
 
       {/* No Visible Widgets Message */}
       {visibleWidgets.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-600 mb-4">No widgets are currently visible.</p>
-          <Button onClick={() => setShowSettings(true)}>
-            <Settings className="w-4 h-4 mr-2" />
-            Show Widget Settings
-          </Button>
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Dashboard Widgets Have Moved</h3>
+          <p className="text-gray-600 mb-4">
+            All space weather monitoring widgets are now available on dedicated pages for better organization:
+          </p>
+          <div className="max-w-md mx-auto text-left space-y-2 mb-6">
+            <p className="text-sm text-gray-600">• <strong>Activity Page:</strong> Real-time KP Index, Solar Wind, X-ray & Proton Flux</p>
+            <p className="text-sm text-gray-600">• <strong>Widgets Page:</strong> Advanced monitoring tools and forecasts</p>
+            <p className="text-sm text-gray-600">• <strong>Python Analysis:</strong> AI-powered analysis and predictions</p>
+          </div>
+          <div className="space-x-3">
+            <Button onClick={() => window.location.href = '/activity'}>
+              View Activity Dashboard
+            </Button>
+            <Button variant="outline" onClick={() => window.location.href = '/widgets'}>
+              View All Widgets
+            </Button>
+          </div>
         </div>
       )}
     </div>
   )
 }
 
-// Export individual widget components for direct use
-export {
-  AuroraForecastWidget,
-  SatelliteEnvironmentWidget,
-  PythonAnalysisWidget,
-}
+// No widgets are currently exported from WidgetManager
+// All widgets have been moved to dedicated pages
