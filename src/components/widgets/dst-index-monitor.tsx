@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Loader2, TrendingUp, TrendingDown, Minus, AlertTriangle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Loader2, TrendingUp, TrendingDown, Minus, AlertTriangle, RefreshCw, Download, ChevronDown, ChevronUp } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface DstIndexData {
@@ -30,6 +31,7 @@ export default function DstIndexMonitor() {
   const [data, setData] = useState<DstIndexData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
     fetchDstData()
@@ -38,6 +40,7 @@ export default function DstIndexMonitor() {
   }, [])
 
   const fetchDstData = async () => {
+    setLoading(true)
     try {
       const response = await fetch('/api/data/dst-index')
       if (!response.ok) throw new Error('Failed to fetch DST data')
@@ -49,6 +52,32 @@ export default function DstIndexMonitor() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleExport = () => {
+    if (!data) return
+    
+    const exportData = {
+      timestamp: new Date().toISOString(),
+      current: data.current,
+      level: data.currentLevel,
+      trend: data.trend,
+      statistics_24h: {
+        min: data.min24h,
+        max: data.max24h,
+        average: data.average24h
+      },
+      storm_probability: data.stormProbability,
+      history: data.history
+    }
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `dst-index-${new Date().toISOString()}.json`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const getLevelColor = (level: string) => {
@@ -136,10 +165,46 @@ export default function DstIndexMonitor() {
     <Card className="h-full">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <span>DST Index Monitor</span>
-          <Badge className={cn(getLevelColor(data.currentLevel), 'text-white')}>
-            {data.currentLevel}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <span>DST Index Monitor</span>
+            <Badge className={cn(getLevelColor(data.currentLevel), 'text-white')}>
+              {data.currentLevel}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={handleExport}
+              title="Export data"
+            >
+              <Download className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={fetchDstData}
+              disabled={loading}
+              title="Refresh"
+            >
+              <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={() => setExpanded(!expanded)}
+              title={expanded ? "Collapse" : "Expand"}
+            >
+              {expanded ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -195,6 +260,70 @@ export default function DstIndexMonitor() {
           <div>DST measures ring current strength</div>
           <div>More negative = stronger storm</div>
         </div>
+
+        {/* Expanded Content */}
+        {expanded && (
+          <div className="space-y-4 border-t pt-4">
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">DST Index Details</h4>
+              <div className="text-xs text-gray-600 space-y-1">
+                <p>The Disturbance Storm Time (DST) index monitors the intensity of the ring current that encircles Earth during geomagnetic storms.</p>
+                <p>Values are measured in nanoteslas (nT):</p>
+                <ul className="ml-4 space-y-1">
+                  <li>• {'>'} -30 nT: Quiet conditions</li>
+                  <li>• -30 to -50 nT: Unsettled</li>
+                  <li>• -50 to -100 nT: Minor storm (G1)</li>
+                  <li>• -100 to -200 nT: Moderate storm (G2)</li>
+                  <li>• -200 to -300 nT: Strong storm (G3)</li>
+                  <li>• -300 to -400 nT: Severe storm (G4)</li>
+                  <li>• {'<'} -400 nT: Extreme storm (G5)</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Current Conditions Analysis</h4>
+              <div className="text-xs text-gray-600 space-y-1">
+                <p>Current DST: {formatValue(data.current)}</p>
+                <p>Storm Level: {data.currentLevel}</p>
+                <p>Trend: {data.trend === 'recovering' ? 'Field recovering (improving)' : 
+                         data.trend === 'intensifying' ? 'Field intensifying (worsening)' : 
+                         'Field stable'}</p>
+                <p>24-hour range: {formatValue(data.min24h)} to {formatValue(data.max24h)}</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium">Potential Impacts</h4>
+              <div className="text-xs text-gray-600">
+                {data.currentLevel === 'Quiet' && (
+                  <p>No significant impacts expected. Normal operations for all systems.</p>
+                )}
+                {data.currentLevel === 'Unsettled' && (
+                  <p>Minor fluctuations possible in power grids at high latitudes. Satellite operations normal.</p>
+                )}
+                {(data.currentLevel === 'Minor Storm' || data.currentLevel === 'Moderate Storm') && (
+                  <div className="space-y-1">
+                    <p>• Power systems: Voltage fluctuations possible</p>
+                    <p>• Satellites: Increased drag on low-Earth orbit satellites</p>
+                    <p>• Navigation: GPS accuracy may be degraded</p>
+                    <p>• Aurora visible at higher latitudes</p>
+                  </div>
+                )}
+                {(data.currentLevel === 'Strong Storm' || data.currentLevel === 'Severe Storm' || data.currentLevel === 'Extreme Storm') && (
+                  <div className="space-y-1">
+                    <p className="text-red-600 font-medium">Significant impacts likely:</p>
+                    <p>• Power grids: Possible widespread voltage control problems</p>
+                    <p>• Satellites: Surface charging, orientation problems</p>
+                    <p>• Navigation: GPS may be unreliable for hours</p>
+                    <p>• Communications: HF radio propagation issues</p>
+                    <p>• Aurora visible at mid-latitudes</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

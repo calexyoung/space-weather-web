@@ -104,29 +104,98 @@ sudo systemctl start space-weather-python
 
 ### 2. Docker Deployment
 
-Create separate containers for each service:
+The application includes a multi-stage Dockerfile that builds and runs both services in a single container using Supervisor for process management.
 
-```dockerfile
-# Next.js Dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY .next ./.next
-COPY public ./public
-EXPOSE 3000
-CMD ["npm", "start"]
+#### Building the Docker Image
+
+```bash
+# Build the Docker image
+docker build -t space-weather-web .
+
+# Run with database connection
+docker run -d \
+  --name space-weather \
+  -p 3000:3000 \
+  -p 5000:5000 \
+  -e DATABASE_URL="postgresql://user:pass@host/dbname" \
+  -e JWT_SECRET="your-secret-key-min-32-chars" \
+  -e OPENAI_API_KEY="sk-..." \
+  space-weather-web:latest
+
+# Run without database (limited functionality)
+docker run -d \
+  --name space-weather \
+  -p 3000:3000 \
+  -p 5000:5000 \
+  space-weather-web:latest
 ```
 
-```dockerfile
-# Python Dockerfile
-FROM python:3.11-slim
-WORKDIR /app
-COPY python-backend/requirements.txt .
-RUN pip install -r requirements.txt
-COPY python-backend .
-EXPOSE 8000
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+#### Docker Configuration Details
+
+**Key Features:**
+- **Base Image**: `node:20-slim` (Debian-based for better Python package compatibility)
+- **Multi-stage Build**: Optimizes image size by separating build and runtime stages
+- **Standalone Output**: Next.js configured with `output: 'standalone'` for minimal production image
+- **Process Management**: Supervisor manages both Next.js and Python services
+- **Non-root User**: Runs as `nextjs` user for security
+
+**Required Prisma Configuration:**
+Add binary targets to `prisma/schema.prisma`:
+```prisma
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x", "linux-arm64-openssl-3.0.x"]
+}
+```
+
+**Python Dependencies:**
+The Docker build uses `python-backend/requirements-docker.txt` with essential packages:
+- Flask and Flask-CORS for API server
+- pandas, numpy for data processing
+- beautifulsoup4, requests for web scraping
+- redis for caching
+- schedule for task scheduling
+
+**Port Configuration:**
+- **3000**: Next.js application
+- **5000**: Python Flask backend
+
+**Health Checks:**
+The container includes automatic health checks that verify the Next.js application is responding on port 3000.
+
+#### Docker Compose Alternative
+
+For production deployments with external database:
+
+```yaml
+# docker-compose.yml
+version: '3.8'
+services:
+  app:
+    image: space-weather-web:latest
+    ports:
+      - "3000:3000"
+      - "5000:5000"
+    environment:
+      DATABASE_URL: postgresql://user:pass@db:5432/space_weather
+      JWT_SECRET: ${JWT_SECRET}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    depends_on:
+      - db
+    restart: unless-stopped
+  
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: space_weather
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
 ```
 
 ### 3. Cloud Platform Deployment
@@ -234,6 +303,53 @@ curl http://localhost:3000/api/health/data-quality
    - Clear cache: `rm -rf .next node_modules && npm install`
    - Check TypeScript errors: `npx tsc --noEmit`
    - Review build logs for specific errors
+
+### Docker-Specific Issues
+
+1. **Navigator Reference Error during build:**
+   - **Issue**: `ReferenceError: navigator is not defined`
+   - **Solution**: Ensure all browser-only code is wrapped with `typeof window !== 'undefined'` checks
+   - **Example Fix**: 
+     ```typescript
+     private isOnline = typeof window !== 'undefined' ? (navigator?.onLine ?? true) : true
+     ```
+
+2. **Missing .next/standalone directory:**
+   - **Issue**: Docker build fails with `.next/standalone: not found`
+   - **Solution**: Add `output: 'standalone'` to `next.config.ts`:
+     ```typescript
+     const nextConfig = {
+       output: 'standalone',
+       // ... other config
+     }
+     ```
+
+3. **Python packages fail to install in Alpine:**
+   - **Issue**: Scientific Python packages take hours to compile or fail
+   - **Solution**: Use Debian-based image (`node:20-slim`) instead of Alpine
+   - **Alternative**: Create a `requirements-docker.txt` with minimal dependencies
+
+4. **Prisma binary target mismatch:**
+   - **Issue**: `Prisma Client could not locate the Query Engine`
+   - **Solution**: Add appropriate binary targets to `schema.prisma`:
+     ```prisma
+     binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x", "linux-arm64-openssl-3.0.x"]
+     ```
+
+5. **Container exits immediately:**
+   - **Issue**: Container stops with exit code 1
+   - **Solution**: Check logs with `docker logs <container-name>`
+   - **Common causes**: 
+     - Missing environment variables
+     - Database connection failure (use updated entrypoint script that handles this gracefully)
+     - Port conflicts
+
+6. **Health check failing:**
+   - **Issue**: Container marked as unhealthy
+   - **Solution**: 
+     - Ensure database is accessible if DATABASE_URL is set
+     - Check that both services are running: `docker exec <container> ps aux`
+     - Verify ports are correctly mapped
 
 ### Logging
 

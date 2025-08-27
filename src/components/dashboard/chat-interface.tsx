@@ -230,7 +230,7 @@ What would you like to work on today?`,
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSendMessage()
@@ -238,7 +238,11 @@ What would you like to work on today?`,
   }
 
   const copyMessage = (content: string) => {
-    navigator.clipboard.writeText(content)
+    if (typeof window !== 'undefined' && navigator?.clipboard) {
+      navigator.clipboard.writeText(content).catch((err) => {
+        console.error('Failed to copy to clipboard:', err)
+      })
+    }
   }
 
   const exportChat = () => {
@@ -404,7 +408,7 @@ What would you like to work on today?`,
                   ref={textareaRef}
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={handleKeyDown}
                   placeholder="Ask me about space weather or request a report..."
                   className="resize-none min-h-[60px] max-h-32"
                   disabled={isStreaming}

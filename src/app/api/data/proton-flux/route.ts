@@ -3,12 +3,15 @@ import { ProtonFluxDataSchema, type ProtonFluxData } from '@/lib/widgets/widget-
 
 export async function GET() {
   try {
-    // Fetch real GOES satellite proton data from NOAA
-    const [protonResponse, summaryResponse] = await Promise.all([
+    // Fetch real GOES satellite proton data and solar flare data from NOAA
+    const [protonResponse, summaryResponse, flareResponse] = await Promise.all([
       fetch('https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json', {
         signal: AbortSignal.timeout(10000)
       }),
       fetch('https://services.swpc.noaa.gov/products/noaa-scales.json', {
+        signal: AbortSignal.timeout(10000)
+      }).catch(() => null),
+      fetch('https://services.swpc.noaa.gov/json/goes/primary/xray-flares-1-day.json', {
         signal: AbortSignal.timeout(10000)
       }).catch(() => null)
     ])
@@ -17,7 +20,7 @@ export async function GET() {
       throw new Error(`NOAA API error: ${protonResponse.status}`)
     }
     
-    let protonData, scalesData
+    let protonData, scalesData, flareData
     try {
       const responseText = await protonResponse.text()
       try {
@@ -37,6 +40,13 @@ export async function GET() {
     } catch (err) {
       console.warn('Failed to parse scales data:', err)
       scalesData = null
+    }
+    
+    try {
+      flareData = flareResponse && flareResponse.ok ? await flareResponse.json() : []
+    } catch (err) {
+      console.warn('Failed to parse flare data:', err)
+      flareData = []
     }
     
     // Get the most recent valid measurements for each energy level
@@ -201,6 +211,50 @@ export async function GET() {
       }
     }
     
+    // Process solar flare data from the last 24 hours
+    const processFlareData = () => {
+      if (!Array.isArray(flareData) || flareData.length === 0) {
+        return []
+      }
+      
+      const now = Date.now()
+      const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000
+      
+      return flareData
+        .filter((flare: any) => {
+          const peakTime = new Date(flare.peak_time || flare.time_tag)
+          return peakTime.getTime() > twentyFourHoursAgo && flare.class_type
+        })
+        .map((flare: any) => {
+          const peakTime = new Date(flare.peak_time || flare.time_tag)
+          const flareClass = flare.class_type + (flare.intensity || '')
+          
+          // Extract active region if available
+          let activeRegion: number | undefined
+          let location: string | undefined
+          
+          if (flare.active_region) {
+            activeRegion = parseInt(flare.active_region)
+          }
+          
+          // Use location if no active region
+          if (!activeRegion && flare.location) {
+            location = flare.location
+          }
+          
+          return {
+            flareClass,
+            peakTime,
+            activeRegion,
+            location
+          }
+        })
+        .sort((a: any, b: any) => b.peakTime.getTime() - a.peakTime.getTime())
+        .slice(0, 20) // Limit to 20 most recent flares
+    }
+    
+    const recentFlares = processFlareData()
+    
     const realData: ProtonFluxData = {
       current: {
         flux10,
@@ -213,7 +267,8 @@ export async function GET() {
       trend,
       recentEvents,
       forecast: getForecast(),
-      riskLevel: getRiskLevel(flux10)
+      riskLevel: getRiskLevel(flux10),
+      recentFlares: recentFlares.length > 0 ? recentFlares : undefined
     }
 
     // Validate the data structure

@@ -4,6 +4,7 @@ import React from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Zap, Sun, Clock, AlertTriangle } from 'lucide-react'
 import { format } from 'date-fns'
+import { formatInTimeZone } from 'date-fns-tz'
 import { WidgetBase, Sparkline, widgetUtils } from '@/lib/widgets/widget-base'
 import { useWidgetData } from '@/lib/widgets/data-fetcher'
 import { XrayFluxData, WidgetConfig } from '@/lib/widgets/widget-types'
@@ -164,34 +165,58 @@ export default function XrayFluxWidget({ config, onConfigChange }: XrayFluxWidge
             </div>
           </div>
 
-          {/* Recent Flares */}
+          {/* Solar Flares (24h) */}
           {data.recentFlares.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <AlertTriangle className="w-4 h-4 text-orange-500" />
-                  <span className="text-sm font-medium">Recent Activity</span>
+            <div className="border-t pt-3">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                  Solar Flares (24h UTC)
                 </div>
-                <span className="text-xs text-gray-500">Last 24 hours</span>
+                <div className="text-xs text-gray-500">
+                  {data.recentFlares.length} events
+                </div>
               </div>
-              
-              <div className="space-y-1">
-                {data.recentFlares.slice(0, config.expanded ? 10 : 3).map((flare, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
-                    <div className="flex items-center space-x-2">
-                      <Badge className={getFlareClassColor(flare.peak.charAt(0))} variant="outline">
-                        {flare.peak}
-                      </Badge>
-                      {flare.location && (
-                        <span className="text-xs text-gray-600">{flare.location}</span>
-                      )}
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {data.recentFlares.map((flare, i) => {
+                  // Parse active region or location from flare.location field
+                  let activeRegion: string | undefined
+                  let coordinates: string | undefined
+                  
+                  if (flare.location) {
+                    // Check if it's an AR number (e.g., "AR13912" or "13912")
+                    const arMatch = flare.location.match(/(?:AR)?(\d{4,5})/i)
+                    if (arMatch) {
+                      activeRegion = `AR${arMatch[1]}`
+                    } else {
+                      // Otherwise treat as coordinates
+                      coordinates = flare.location
+                    }
+                  }
+                  
+                  return (
+                    <div key={i} className="flex items-center justify-between text-xs bg-gray-50 dark:bg-gray-800 rounded px-2 py-1">
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant="outline" 
+                          className={`text-[10px] px-1 py-0 ${
+                            flare.peak.startsWith('X') ? 'border-red-500 text-red-600' :
+                            flare.peak.startsWith('M') ? 'border-orange-500 text-orange-600' :
+                            flare.peak.startsWith('C') ? 'border-yellow-500 text-yellow-600' :
+                            'border-gray-400 text-gray-600'
+                          }`}
+                        >
+                          {flare.peak}
+                        </Badge>
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {formatInTimeZone(flare.time, 'UTC', 'MMM dd HH:mm')}
+                        </span>
+                      </div>
+                      <div className="text-gray-500 dark:text-gray-400 text-[10px]">
+                        {activeRegion || coordinates || 'Unknown'}
+                      </div>
                     </div>
-                    <div className="text-xs text-gray-500">
-                      {format(flare.time, 'HH:mm')}
-                      {flare.duration && ` (${flare.duration}m)`}
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}

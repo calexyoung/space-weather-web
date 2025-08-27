@@ -42,7 +42,7 @@ if (typeof EventTarget === 'undefined') {
 class DataFetcherService extends EventTarget {
   private subscriptions = new Map<string, NodeJS.Timeout>()
   private cache = new Map<string, { data: any, timestamp: Date }>()
-  private isOnline = navigator?.onLine ?? true
+  private isOnline = typeof window !== 'undefined' ? (navigator?.onLine ?? true) : true
   private eventSource: EventSource | null = null
 
   constructor() {
@@ -97,12 +97,18 @@ class DataFetcherService extends EventTarget {
   // Fetch data for a specific widget
   private async fetchWidgetData(widgetType: WidgetType) {
     try {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
       const response = await fetch(`/api/data/${widgetType}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: controller.signal,
       })
+
+      clearTimeout(timeoutId)
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
@@ -119,13 +125,27 @@ class DataFetcherService extends EventTarget {
       }))
 
     } catch (error) {
-      console.error(`Failed to fetch data for ${widgetType}:`, error)
+      // More specific error handling
+      let errorMessage = 'Unknown error'
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = 'Request timeout'
+        } else if (error.message.includes('Failed to fetch')) {
+          errorMessage = 'Network error - check connection'
+        } else {
+          errorMessage = error.message
+        }
+      }
+      
+      console.warn(`Failed to fetch data for ${widgetType}:`, errorMessage)
       
       // Try to use cached data if available
       const cached = this.cache.get(widgetType)
       if (cached) {
+        console.log(`Using cached data for ${widgetType}`)
         this.dispatchEvent(new CustomEvent('data_update', {
-          detail: { widgetId: widgetType, data: cached.data, timestamp: cached.timestamp }
+          detail: { widgetId: widgetType, data: cached.data, timestamp: cached.timestamp, fromCache: true }
         }))
       }
 
@@ -133,7 +153,7 @@ class DataFetcherService extends EventTarget {
       this.dispatchEvent(new CustomEvent('error', {
         detail: { 
           widgetId: widgetType, 
-          error: error instanceof Error ? error.message : 'Unknown error',
+          error: errorMessage,
           timestamp: new Date()
         }
       }))
@@ -154,9 +174,18 @@ class DataFetcherService extends EventTarget {
 
   // Initialize Server-Sent Events connection for real-time updates
   initializeSSE() {
-    if (typeof window === 'undefined' || this.eventSource) return
+    if (typeof window === 'undefined') return
+    
+    // Don't initialize if already connected or connecting
+    if (this.eventSource && this.eventSource.readyState !== EventSource.CLOSED) return
 
     try {
+      // Check if SSE is supported
+      if (!window.EventSource) {
+        console.warn('SSE not supported in this browser')
+        return
+      }
+
       this.eventSource = new EventSource('/api/stream/space-weather')
 
       this.eventSource.onmessage = (event) => {
@@ -164,30 +193,37 @@ class DataFetcherService extends EventTarget {
           const data = JSON.parse(event.data)
           
           // Cache and dispatch the update
-          this.cache.set(data.widgetId, { data: data.payload, timestamp: new Date(data.timestamp) })
-          
-          this.dispatchEvent(new CustomEvent('data_update', {
-            detail: { 
-              widgetId: data.widgetId, 
-              data: data.payload, 
-              timestamp: new Date(data.timestamp) 
-            }
-          }))
+          if (data.widgetId && data.payload) {
+            this.cache.set(data.widgetId, { data: data.payload, timestamp: new Date(data.timestamp) })
+            
+            this.dispatchEvent(new CustomEvent('data_update', {
+              detail: { 
+                widgetId: data.widgetId, 
+                data: data.payload, 
+                timestamp: new Date(data.timestamp) 
+              }
+            }))
+          }
         } catch (error) {
-          console.error('Failed to parse SSE message:', error)
+          console.warn('Failed to parse SSE message:', error)
         }
       }
 
       this.eventSource.onerror = (event) => {
-        console.error('SSE connection error:', event)
-        
-        // Attempt to reconnect after a delay
-        setTimeout(() => {
-          if (this.eventSource?.readyState === EventSource.CLOSED) {
-            this.eventSource = null
-            this.initializeSSE()
-          }
-        }, 5000)
+        // Only log actual errors, not normal connection closes
+        if (this.eventSource?.readyState === EventSource.CONNECTING) {
+          console.warn('SSE reconnecting...')
+        } else if (this.eventSource?.readyState === EventSource.CLOSED) {
+          console.warn('SSE connection closed, will retry in 5 seconds')
+          
+          // Clean up and retry
+          this.eventSource = null
+          setTimeout(() => {
+            if (this.isOnline) {
+              this.initializeSSE()
+            }
+          }, 5000)
+        }
       }
 
       this.eventSource.onopen = () => {
@@ -195,7 +231,8 @@ class DataFetcherService extends EventTarget {
       }
 
     } catch (error) {
-      console.error('Failed to initialize SSE:', error)
+      console.warn('Failed to initialize SSE:', error)
+      // SSE is optional, continue with polling
     }
   }
 

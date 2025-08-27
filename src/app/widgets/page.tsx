@@ -12,15 +12,18 @@ import EnlilModel from '@/components/widgets/enlil-model'
 import SolarCycleDashboard from '@/components/widgets/solar-cycle-dashboard'
 import MultiSatelliteView from '@/components/widgets/multi-satellite-view'
 import AlertEngine from '@/components/widgets/alert-engine'
+import AuroraForecastWidget from '@/components/widgets/aurora-forecast-widget'
+import SatelliteEnvironmentWidget from '@/components/widgets/satellite-environment-widget'
 
 // Widget configuration interface
 interface WidgetConfig {
   id: string
   title: string
-  component: React.ComponentType
+  component: React.ComponentType<any>
   category: string
   isVisible: boolean
   position: number
+  widgetConfig?: any
 }
 
 // Define all widgets with their configurations
@@ -72,6 +75,32 @@ const WIDGET_DEFINITIONS: Omit<WidgetConfig, 'isVisible' | 'position'>[] = [
     title: 'Alert Engine',
     component: AlertEngine,
     category: 'Real-time Alert Monitoring'
+  },
+  {
+    id: 'aurora-forecast',
+    title: 'Aurora Forecast',
+    component: AuroraForecastWidget,
+    category: 'Impact Assessment & Modeling',
+    widgetConfig: {
+      id: 'aurora-forecast',
+      title: 'Aurora Forecast',
+      refreshInterval: 300000, // 5 minutes
+      isVisible: true,
+      expanded: false
+    }
+  },
+  {
+    id: 'satellite-environment',
+    title: 'Satellite Environment',
+    component: SatelliteEnvironmentWidget,
+    category: 'Satellite Data Redundancy',
+    widgetConfig: {
+      id: 'satellite-environment',
+      title: 'Satellite Environment',
+      refreshInterval: 120000, // 2 minutes
+      isVisible: true,
+      expanded: false
+    }
   }
 ]
 
@@ -95,7 +124,7 @@ export default function WidgetsPage() {
         // Merge saved config with defaults to handle new widgets
         const mergedWidgets = defaultWidgets.map(defaultWidget => {
           const saved = parsed.find((w: WidgetConfig) => w.id === defaultWidget.id)
-          return saved ? { ...defaultWidget, isVisible: saved.isVisible, position: saved.position } : defaultWidget
+          return saved ? { ...defaultWidget, isVisible: saved.isVisible, position: saved.position, widgetConfig: defaultWidget.widgetConfig } : defaultWidget
         })
         setWidgets(mergedWidgets.sort((a, b) => a.position - b.position))
       } catch (error) {
@@ -249,7 +278,11 @@ export default function WidgetsPage() {
               const WidgetComponent = widget.component
               return (
                 <div key={widget.id} className="min-h-[400px]">
-                  <WidgetComponent />
+                  {widget.widgetConfig ? (
+                    <WidgetComponent config={widget.widgetConfig} />
+                  ) : (
+                    <WidgetComponent />
+                  )}
                 </div>
               )
             })}

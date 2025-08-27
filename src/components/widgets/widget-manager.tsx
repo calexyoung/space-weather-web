@@ -6,20 +6,12 @@ import { Settings, Eye, EyeOff, GripVertical } from 'lucide-react'
 import { WidgetConfig, WidgetType, WIDGET_REGISTRY } from '@/lib/widgets/widget-types'
 
 // Import all widget components
-import KpIndexWidget from './kp-index-widget'
-import SolarWindWidget from './solar-wind-widget'
-import XrayFluxWidget from './xray-flux-widget'
-import ProtonFluxWidget from './proton-flux-widget'
 import AuroraForecastWidget from './aurora-forecast-widget'
 import SatelliteEnvironmentWidget from './satellite-environment-widget'
 import { PythonAnalysisWidget } from './python-analysis-widget'
 
-// Widget component mapping
+// Widget component mapping (only includes widgets shown on Dashboard)
 const WIDGET_COMPONENTS = {
-  'kp-index': KpIndexWidget,
-  'solar-wind': SolarWindWidget,
-  'xray-flux': XrayFluxWidget,
-  'proton-flux': ProtonFluxWidget,
   'aurora-forecast': AuroraForecastWidget,
   'satellite-environment': SatelliteEnvironmentWidget,
   'python-analysis': PythonAnalysisWidget,
@@ -35,28 +27,37 @@ export default function WidgetManager({ className = '' }: WidgetManagerProps) {
 
   // Initialize widgets with default configuration
   useEffect(() => {
-    const defaultWidgets: WidgetConfig[] = Object.entries(WIDGET_REGISTRY).map(([id, info], index) => ({
-      id,
-      title: info.title,
-      refreshInterval: info.defaultConfig.refreshInterval || 30000,
-      isVisible: true,
-      position: index,
-      expanded: false,
-    }))
+    // Exclude specific widgets from Dashboard
+    const excludedWidgets = ['kp-index', 'solar-wind', 'xray-flux', 'proton-flux']
+    
+    const defaultWidgets: WidgetConfig[] = Object.entries(WIDGET_REGISTRY)
+      .filter(([id]) => !excludedWidgets.includes(id))
+      .map(([id, info], index) => ({
+        id,
+        title: info.title,
+        refreshInterval: info.defaultConfig.refreshInterval || 30000,
+        isVisible: true,
+        position: index,
+        expanded: false,
+      }))
 
     // Load saved configuration from localStorage
-    const savedConfig = localStorage.getItem('space-weather-widgets')
-    if (savedConfig) {
-      try {
-        const parsed = JSON.parse(savedConfig)
-        // Merge saved config with defaults to handle new widgets
-        const mergedWidgets = defaultWidgets.map(defaultWidget => {
-          const saved = parsed.find((w: WidgetConfig) => w.id === defaultWidget.id)
-          return saved ? { ...defaultWidget, ...saved } : defaultWidget
-        })
-        setWidgets(mergedWidgets.sort((a, b) => a.position - b.position))
-      } catch (error) {
-        console.error('Failed to parse saved widget config:', error)
+    if (typeof window !== 'undefined') {
+      const savedConfig = localStorage.getItem('space-weather-widgets')
+      if (savedConfig) {
+        try {
+          const parsed = JSON.parse(savedConfig)
+          // Filter out excluded widgets and merge saved config with defaults
+          const mergedWidgets = defaultWidgets.map(defaultWidget => {
+            const saved = parsed.find((w: WidgetConfig) => w.id === defaultWidget.id)
+            return saved ? { ...defaultWidget, ...saved } : defaultWidget
+          }).filter(widget => !excludedWidgets.includes(widget.id))
+          setWidgets(mergedWidgets.sort((a, b) => a.position - b.position))
+        } catch (error) {
+          console.error('Failed to parse saved widget config:', error)
+          setWidgets(defaultWidgets)
+        }
+      } else {
         setWidgets(defaultWidgets)
       }
     } else {
@@ -66,7 +67,7 @@ export default function WidgetManager({ className = '' }: WidgetManagerProps) {
 
   // Save widget configuration to localStorage
   useEffect(() => {
-    if (widgets.length > 0) {
+    if (typeof window !== 'undefined' && widgets.length > 0) {
       localStorage.setItem('space-weather-widgets', JSON.stringify(widgets))
     }
   }, [widgets])
@@ -107,16 +108,23 @@ export default function WidgetManager({ className = '' }: WidgetManagerProps) {
   }
 
   const resetToDefaults = () => {
-    const defaultWidgets: WidgetConfig[] = Object.entries(WIDGET_REGISTRY).map(([id, info], index) => ({
-      id,
-      title: info.title,
-      refreshInterval: info.defaultConfig.refreshInterval || 30000,
-      isVisible: true,
-      position: index,
-      expanded: false,
-    }))
+    // Exclude specific widgets from Dashboard
+    const excludedWidgets = ['kp-index', 'solar-wind', 'xray-flux', 'proton-flux']
+    
+    const defaultWidgets: WidgetConfig[] = Object.entries(WIDGET_REGISTRY)
+      .filter(([id]) => !excludedWidgets.includes(id))
+      .map(([id, info], index) => ({
+        id,
+        title: info.title,
+        refreshInterval: info.defaultConfig.refreshInterval || 30000,
+        isVisible: true,
+        position: index,
+        expanded: false,
+      }))
     setWidgets(defaultWidgets)
-    localStorage.removeItem('space-weather-widgets')
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('space-weather-widgets')
+    }
   }
 
   const visibleWidgets = widgets
@@ -234,10 +242,6 @@ export default function WidgetManager({ className = '' }: WidgetManagerProps) {
 
 // Export individual widget components for direct use
 export {
-  KpIndexWidget,
-  SolarWindWidget,
-  XrayFluxWidget,
-  ProtonFluxWidget,
   AuroraForecastWidget,
   SatelliteEnvironmentWidget,
   PythonAnalysisWidget,

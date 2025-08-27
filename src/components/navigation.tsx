@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, Calendar, Satellite, Globe, Gauge, Zap, FileText, TrendingUp } from 'lucide-react';
+import { Activity, Calendar, Satellite, Globe, Gauge, FileText, TrendingUp, Brain } from 'lucide-react';
 
 const Navigation = () => {
   const pathname = usePathname();
@@ -17,11 +17,6 @@ const Navigation = () => {
       href: '/activity',
       label: 'Activity',
       icon: Activity,
-    },
-    {
-      href: '/current-activity',
-      label: 'Current Activity',
-      icon: Zap,
     },
     {
       href: '/swx-reports',
@@ -47,6 +42,11 @@ const Navigation = () => {
       href: '/widgets',
       label: 'Widgets',
       icon: Gauge,
+    },
+    {
+      href: '/python-analysis',
+      label: 'Python Analysis',
+      icon: Brain,
     },
   ];
 
