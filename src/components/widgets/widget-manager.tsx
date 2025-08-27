@@ -42,18 +42,22 @@ export default function WidgetManager({ className = '' }: WidgetManagerProps) {
       }))
 
     // Load saved configuration from localStorage
-    const savedConfig = localStorage.getItem('space-weather-widgets')
-    if (savedConfig) {
-      try {
-        const parsed = JSON.parse(savedConfig)
-        // Filter out excluded widgets and merge saved config with defaults
-        const mergedWidgets = defaultWidgets.map(defaultWidget => {
-          const saved = parsed.find((w: WidgetConfig) => w.id === defaultWidget.id)
-          return saved ? { ...defaultWidget, ...saved } : defaultWidget
-        }).filter(widget => !excludedWidgets.includes(widget.id))
-        setWidgets(mergedWidgets.sort((a, b) => a.position - b.position))
-      } catch (error) {
-        console.error('Failed to parse saved widget config:', error)
+    if (typeof window !== 'undefined') {
+      const savedConfig = localStorage.getItem('space-weather-widgets')
+      if (savedConfig) {
+        try {
+          const parsed = JSON.parse(savedConfig)
+          // Filter out excluded widgets and merge saved config with defaults
+          const mergedWidgets = defaultWidgets.map(defaultWidget => {
+            const saved = parsed.find((w: WidgetConfig) => w.id === defaultWidget.id)
+            return saved ? { ...defaultWidget, ...saved } : defaultWidget
+          }).filter(widget => !excludedWidgets.includes(widget.id))
+          setWidgets(mergedWidgets.sort((a, b) => a.position - b.position))
+        } catch (error) {
+          console.error('Failed to parse saved widget config:', error)
+          setWidgets(defaultWidgets)
+        }
+      } else {
         setWidgets(defaultWidgets)
       }
     } else {
@@ -63,7 +67,7 @@ export default function WidgetManager({ className = '' }: WidgetManagerProps) {
 
   // Save widget configuration to localStorage
   useEffect(() => {
-    if (widgets.length > 0) {
+    if (typeof window !== 'undefined' && widgets.length > 0) {
       localStorage.setItem('space-weather-widgets', JSON.stringify(widgets))
     }
   }, [widgets])
@@ -118,7 +122,9 @@ export default function WidgetManager({ className = '' }: WidgetManagerProps) {
         expanded: false,
       }))
     setWidgets(defaultWidgets)
-    localStorage.removeItem('space-weather-widgets')
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('space-weather-widgets')
+    }
   }
 
   const visibleWidgets = widgets

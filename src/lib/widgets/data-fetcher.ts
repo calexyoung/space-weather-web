@@ -42,7 +42,7 @@ if (typeof EventTarget === 'undefined') {
 class DataFetcherService extends EventTarget {
   private subscriptions = new Map<string, NodeJS.Timeout>()
   private cache = new Map<string, { data: any, timestamp: Date }>()
-  private isOnline = navigator?.onLine ?? true
+  private isOnline = typeof window !== 'undefined' ? (navigator?.onLine ?? true) : true
   private eventSource: EventSource | null = null
 
   constructor() {

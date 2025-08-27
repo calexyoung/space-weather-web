@@ -8,6 +8,9 @@ const securityHeaders = Object.entries(getSecurityHeaders()).map(([key, value]) 
 }));
 
 const nextConfig: NextConfig = {
+  // Enable standalone output for Docker deployment
+  output: 'standalone',
+  
   eslint: {
     // TODO: Remove this after fixing ESLint errors
     ignoreDuringBuilds: true,

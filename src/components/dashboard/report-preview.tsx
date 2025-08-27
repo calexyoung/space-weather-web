@@ -60,7 +60,11 @@ export default function ReportPreview({
   }
 
   const handleCopyContent = (content: string) => {
-    navigator.clipboard.writeText(content)
+    if (typeof window !== 'undefined' && navigator?.clipboard) {
+      navigator.clipboard.writeText(content).catch((err) => {
+        console.error('Failed to copy to clipboard:', err)
+      })
+    }
   }
 
   const handleExport = (format: 'md' | 'html' | 'pdf' | 'json') => {
